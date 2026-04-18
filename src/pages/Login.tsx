@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, db } from '../lib/firebase';
+import { auth } from '../lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
 import { useAuth } from '../store/useAuth';
 
 export default function Login() {
@@ -25,19 +24,10 @@ export default function Login() {
     setError('');
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      // Bootstrap admin role for the specific user
-      if (email === 'kuikelaashutosh@gmail.com') {
-        const userRef = doc(db, 'users', userCredential.user.uid);
-        await setDoc(userRef, {
-          email: email,
-          role: 'admin'
-        }, { merge: true });
-      }
-
-      // Role check is handled by the useAuth listener
+      await signInWithEmailAndPassword(auth, email, password);
+      // Success will be handled by the useEffect above through the useAuth listener
     } catch (err: any) {
+      console.error('Login error:', err);
       setError('Invalid credentials. Please try again.');
       setLoading(false);
     }

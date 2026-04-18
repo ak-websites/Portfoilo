@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 interface AuthState {
   user: User | null;
@@ -27,12 +27,6 @@ export const useAuth = create<AuthState>((set) => ({
       set({ user, loading: true, authLoading: true });
       
       if (user) {
-        // Special bootstrap for the specific user
-        if (user.email === 'kuikelaashutosh@gmail.com') {
-          const userRef = doc(db, 'users', user.uid);
-          await setDoc(userRef, { email: user.email, role: 'admin' }, { merge: true });
-        }
-
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         const userData = userDoc.data();
         set({ 

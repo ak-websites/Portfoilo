@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../store/useAuth';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,6 +11,20 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user, isAdmin, loading: authLoading } = useAuth();
+
+  // Redirect if already logged in as admin
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (isAdmin) {
+        navigate('/admin', { replace: true });
+      } else if (!authLoading) {
+        // If logged in but not an admin, we might want to show an error
+        setError('Unauthorized: Your account does not have administrator privileges.');
+        setLoading(false);
+      }
+    }
+  }, [user, isAdmin, authLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,10 +32,8 @@ export default function Login() {
     setError('');
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate('/admin');
     } catch (err: any) {
       setError(err.message || 'Failed to login');
-    } finally {
       setLoading(false);
     }
   };

@@ -9,7 +9,7 @@ import { doc, setDoc } from 'firebase/firestore';
 
 export default function Navbar() {
   const { user, isAdmin } = useAuth();
-  const { mode } = useTheme();
+  const { mode, setMode } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -20,12 +20,16 @@ export default function Navbar() {
   const toggleMode = async () => {
     const nextMode = mode === 'light' ? 'dark' : mode === 'dark' ? 'brown' : 'light';
     
-    // If admin, update globally
+    // Update local state immediately
+    setMode(nextMode);
+    
+    // If admin, update globally in Firestore
     if (isAdmin) {
-      await setDoc(doc(db, 'settings', 'global'), { mode: nextMode }, { merge: true });
-    } else {
-      // For local session only
-      document.documentElement.setAttribute('data-mode', nextMode);
+      try {
+        await setDoc(doc(db, 'settings', 'global'), { mode: nextMode }, { merge: true });
+      } catch (error) {
+        console.error("Failed to update global theme:", error);
+      }
     }
   };
 

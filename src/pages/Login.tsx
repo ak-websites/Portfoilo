@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { auth, db } from '../lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import { useAuth } from '../store/useAuth';
 
 export default function Login() {
@@ -11,18 +11,11 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, authLoading } = useAuth();
 
-  // Redirect if already logged in as admin
   useEffect(() => {
-    if (!authLoading && user) {
-      if (isAdmin) {
-        navigate('/admin', { replace: true });
-      } else if (!authLoading) {
-        // If logged in but not an admin, we might want to show an error
-        setError('Unauthorized: Your account does not have administrator privileges.');
-        setLoading(false);
-      }
+    if (!authLoading && user && isAdmin) {
+      navigate('/admin', { replace: true });
     }
   }, [user, isAdmin, authLoading, navigate]);
 
@@ -30,64 +23,84 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError('');
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Bootstrap admin role for the specific user
+      if (email === 'kuikelaashutosh@gmail.com') {
+        const userRef = doc(db, 'users', userCredential.user.uid);
+        await setDoc(userRef, {
+          email: email,
+          role: 'admin'
+        }, { merge: true });
+      }
+
+      // Role check is handled by the useAuth listener
     } catch (err: any) {
-      setError(err.message || 'Failed to login');
+      setError('Invalid credentials. Please try again.');
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-64px)] px-4">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass p-8 rounded-2xl w-full max-w-md shadow-2xl"
-      >
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-primary text-primary-foreground flex items-center justify-center font-black text-2xl rounded-2xl shadow-2xl mb-4">
-            NK
-          </div>
-          <h2 className="text-3xl font-black tracking-tighter">ADMIN PORTAL</h2>
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-destructive mt-2">Restricted Access</p>
-          <div className="mt-4 p-3 bg-primary/5 rounded-xl border border-primary/10 text-center">
-            <p className="text-xs font-bold text-muted-foreground italic">"This area is reserved for Nayan Kuikel's management. Unauthorized login attempts are monitored."</p>
-          </div>
+    <div className="min-h-screen flex items-center justify-center px-6 bg-[#0a0a0a]">
+      <div className="w-full max-w-[400px]">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#1a1a1a] border border-[#333] rounded-2xl mb-6 font-black text-xl text-[#4A90D9]">NK</div>
+          <h1 className="text-2xl font-bold tracking-tight text-white uppercase">Admin Portal</h1>
+          <p className="text-sm text-gray-500 mt-2">Authorized Access Only</p>
         </div>
-        
-        {error && <p className="text-destructive text-[10px] font-black uppercase mb-4 bg-destructive/10 p-4 rounded-xl border border-destructive/20 text-center">{error}</p>}
-        
-        <form onSubmit={handleLogin} className="space-y-4">
+
+        <form onSubmit={handleLogin} className="space-y-6 bg-[#1a1a1a] p-8 rounded-2xl border border-[#333]">
+          {error && (
+            <div className="p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-500 text-xs text-center">
+              {error}
+            </div>
+          )}
+
           <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input
-              type="email"
+            <label className="block text-[10px] uppercase tracking-widest font-black text-gray-500 mb-2">Email Address</label>
+            <input 
+              type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-background border border-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none transition-all"
+              className="w-full bg-[#0a0a0a] border border-[#333] px-4 py-3 rounded-xl text-white focus:border-[#4A90D9] outline-none transition-all"
+              placeholder="admin@example.com"
               required
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
-            <input
-              type="password"
+            <label className="block text-[10px] uppercase tracking-widest font-black text-gray-500 mb-2">Password</label>
+            <input 
+              type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-background border border-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary outline-none transition-all"
+              className="w-full bg-[#0a0a0a] border border-[#333] px-4 py-3 rounded-xl text-white focus:border-[#4A90D9] outline-none transition-all"
+              placeholder="••••••••"
               required
             />
           </div>
-          <button
-            type="submit"
+
+          <button 
             disabled={loading}
-            className="w-full bg-primary text-primary-foreground font-bold py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+            type="submit"
+            className="w-full bg-[#4A90D9] text-white py-4 rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-[#3a7bc8] transition-all disabled:opacity-50"
           >
             {loading ? 'Authenticating...' : 'Sign In'}
           </button>
         </form>
-      </motion.div>
+
+        <div className="text-center mt-8">
+          <button 
+            onClick={() => navigate('/')}
+            className="text-[10px] uppercase tracking-[0.3em] text-gray-600 hover:text-[#4A90D9] transition-all"
+          >
+            Back to Public Site
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

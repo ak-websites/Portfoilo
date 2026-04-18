@@ -13,7 +13,7 @@ import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
-  const initAuth = useAuth((state) => state.init);
+  const initAuth = useAuth((state) => state.initialize);
   const syncTheme = useTheme((state) => state.syncWithFirestore);
   const syncContent = useContent((state) => state.syncContent);
 
@@ -32,22 +32,21 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route 
-              path="/admin/*" 
-              element={
-                <ProtectedRoute>
-                  <Admin />
-                </ProtectedRoute>
-              } 
-            />
-          </Routes>
-        </main>
-        <Footer />
+        <Routes>
+          {/* Main Portfolio Layout */}
+          <Route path="/" element={<><Navbar /><main className="flex-grow"><Home /></main><Footer /></>} />
+          <Route path="/login" element={<main className="flex-grow"><Login /></main>} />
+          
+          {/* Separate Admin Dashboard Layout (No Site Navbar/Footer) */}
+          <Route 
+            path="/admin/*" 
+            element={
+              <ProtectedRoute>
+                <Admin />
+              </ProtectedRoute>
+            } 
+          />
+        </Routes>
       </div>
     </Router>
   );

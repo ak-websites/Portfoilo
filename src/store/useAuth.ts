@@ -1,52 +1,50 @@
 import { create } from 'zustand';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
-import { doc, getDoc, collection, getDocs, limit, query } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface AuthState {
   user: User | null;
   isAdmin: boolean;
   loading: boolean;
+  authLoading: boolean; // For the redirect logic
   setUser: (user: User | null) => void;
   setIsAdmin: (isAdmin: boolean) => void;
   setLoading: (loading: boolean) => void;
-  init: () => () => void;
+  initialize: () => () => void;
 }
 
 export const useAuth = create<AuthState>((set) => ({
   user: null,
   isAdmin: false,
   loading: true,
+  authLoading: true,
   setUser: (user) => set({ user }),
   setIsAdmin: (isAdmin) => set({ isAdmin }),
-  setLoading: (loading) => set({ loading }),
-  init: () => {
+  setLoading: (loading) => set({ loading, authLoading: loading }),
+  initialize: () => {
     const unsub = onAuthStateChanged(auth, async (user) => {
-      set({ user, loading: true });
+      set({ user, loading: true, authLoading: true });
+      
       if (user) {
-        try {
-          // Check if specific email is in admins collection
-          const adminDoc = await getDoc(doc(db, 'admins', user.email || ''));
-          let isAdmin = adminDoc.exists();
-
-          // Fallback: If no admins exist yet, allow the first user (bootstrap)
-          if (!isAdmin) {
-            const adminsRef = collection(db, 'admins');
-            const adminSnapshot = await getDocs(query(adminsRef, limit(1)));
-            if (adminSnapshot.empty) {
-              isAdmin = true;
-            }
-          }
-
-          set({ isAdmin, loading: false });
-        } catch (error) {
-          console.error("Auth init error:", error);
-          set({ isAdmin: false, loading: false });
+        // Special bootstrap for the specific user
+        if (user.email === 'kuikelaashutosh@gmail.com') {
+          const userRef = doc(db, 'users', user.uid);
+          await setDoc(userRef, { email: user.email, role: 'admin' }, { merge: true });
         }
+
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.data();
+        set({ 
+          isAdmin: userData?.role === 'admin',
+          loading: false,
+          authLoading: false
+        });
       } else {
-        set({ isAdmin: false, loading: false });
+        set({ isAdmin: false, loading: false, authLoading: false });
       }
     });
+
     return unsub;
   },
 }));

@@ -45,8 +45,8 @@ export default function Navbar() {
             NK
           </motion.div>
           <div className="flex flex-col">
-            <span className="font-black text-xl tracking-tighter leading-none">NAYAN KUIKEL</span>
-            <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-bold italic opacity-70">Admin Access Only</span>
+            <span className="font-black text-xl tracking-tighter leading-none uppercase tracking-widest">Nayan Kuikel</span>
+            <span className="text-[9px] uppercase tracking-[0.3em] text-primary/60 font-black">Authorized_Access</span>
           </div>
           
           <div className="absolute -bottom-12 left-0 opacity-0 group-hover:opacity-100 transition-all pointer-events-none translate-y-2 group-hover:translate-y-0">

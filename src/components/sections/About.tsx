@@ -48,7 +48,7 @@ export default function About({ data }: { data: any }) {
             <AboutMetric 
               icon={<Briefcase className="text-primary" />} 
               label="Current Role" 
-              value="Site Engineer at Vawan Bivag" 
+              value={data?.currentRole || "Professional Site Engineer"} 
             />
             <AboutMetric 
               icon={<Award className="text-primary" />} 

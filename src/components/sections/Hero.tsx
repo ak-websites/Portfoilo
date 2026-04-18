@@ -54,9 +54,9 @@ export default function Hero({ data }: HeroProps) {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8 }}
           >
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-black uppercase tracking-widest mb-8">
-              <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
-              {data?.badge || "Site Engineer at Vawan Bivag"}
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-primary text-[10px] font-black uppercase tracking-widest mb-8">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              {data?.badge || "Civil Engineer"}
             </span>
             
             <h1 className="text-6xl md:text-8xl lg:text-[10rem] font-black tracking-tighter mb-8 leading-[0.85] text-balance">

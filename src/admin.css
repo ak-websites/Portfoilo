@@ -1,0 +1,78 @@
+/* Premium Admin Dashboard Styles */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap');
+
+.admin-dashboard {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom scrollbar for admin panel */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  opacity: 0.1;
+  border-radius: 10px;
+}
+
+.admin-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 2rem;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.admin-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 30px 70px rgba(var(--primary-rgb), 0.1);
+}
+
+.admin-input {
+  width: 100%;
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 2px solid var(--border-primary);
+  padding: 1.25rem;
+  border-radius: 1rem;
+  font-size: 1rem;
+  color: var(--text-primary);
+  transition: all 0.2s;
+}
+
+.admin-input:focus {
+  border-color: var(--color-primary);
+  background: var(--bg-primary);
+  outline: none;
+}
+
+.admin-btn-primary {
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+  padding: 1rem 2rem;
+  border-radius: 1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.3s;
+}
+
+.admin-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.3);
+}
+
+.admin-btn-secondary {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  color: var(--text-secondary);
+  padding: 1rem 2rem;
+  border-radius: 1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: all 0.3s;
+}

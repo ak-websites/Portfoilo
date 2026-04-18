@@ -1,70 +1,136 @@
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../store/useAuth';
-import { LogOut, LayoutDashboard, User } from 'lucide-react';
-import { auth } from '../lib/firebase';
+import { LogOut, LayoutDashboard, User, Menu, X, Sun, Moon, Coffee } from 'lucide-react';
+import { auth, db } from '../lib/firebase';
+import { useState } from 'react';
+import { useTheme } from '../store/useTheme';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function Navbar() {
   const { user, isAdmin } = useAuth();
+  const { mode } = useTheme();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleAdminClick = () => {
+    navigate('/admin');
+  };
+
+  const toggleMode = async () => {
+    const nextMode = mode === 'light' ? 'dark' : mode === 'dark' ? 'brown' : 'light';
+    
+    // If admin, update globally
+    if (isAdmin) {
+      await setDoc(doc(db, 'settings', 'global'), { mode: nextMode }, { merge: true });
+    } else {
+      // For local session only
+      document.documentElement.setAttribute('data-mode', nextMode);
+    }
+  };
 
   return (
-    <nav className="sticky top-0 z-50 glass h-16 flex items-center px-4 md:px-8 justify-between">
-      <Link to="/" className="flex items-center gap-2">
-        <motion.div
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          className="w-10 h-10 bg-primary text-primary-foreground flex items-center justify-center font-bold rounded-lg shadow-lg cursor-pointer"
-        >
-          NK
-        </motion.div>
-        <span className="font-bold text-xl tracking-tighter">NAYAN KUIKEL</span>
-      </Link>
+    <nav className="fixed top-0 left-0 right-0 z-50 glass h-20 flex items-center px-6 md:px-12 justify-between">
+      <div className="flex items-center gap-8">
+        <div className="flex items-center gap-3 group relative cursor-pointer" onClick={handleAdminClick}>
+          <motion.div
+            whileHover={{ scale: 1.1, rotate: [0, -10, 10, -10, 0] }}
+            whileTap={{ scale: 0.9 }}
+            className="w-12 h-12 bg-primary text-primary-foreground flex items-center justify-center font-black rounded-xl shadow-xl transition-all"
+          >
+            NK
+          </motion.div>
+          <div className="flex flex-col">
+            <span className="font-black text-xl tracking-tighter leading-none">NAYAN KUIKEL</span>
+            <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-bold italic opacity-70">Admin Access Only</span>
+          </div>
+          
+          <div className="absolute -bottom-12 left-0 opacity-0 group-hover:opacity-100 transition-all pointer-events-none translate-y-2 group-hover:translate-y-0">
+            <span className="bg-destructive text-destructive-foreground text-[9px] px-3 py-1.5 rounded-full font-black uppercase tracking-widest shadow-lg">
+              Authorized Personnel Only
+            </span>
+          </div>
+        </div>
 
-      <div className="hidden md:flex items-center gap-8">
-        <a href="#about" className="hover:text-primary transition-colors">About</a>
-        <a href="#experience" className="hover:text-primary transition-colors">Experience</a>
-        <a href="#projects" className="hover:text-primary transition-colors">Projects</a>
-        <a href="#contact" className="hover:text-primary transition-colors">Contact</a>
+        <div className="hidden lg:flex items-center gap-8 text-sm font-bold uppercase tracking-widest text-muted-foreground">
+          <a href="#about" className="hover:text-primary transition-colors">About</a>
+          <a href="#experience" className="hover:text-primary transition-colors">Experience</a>
+          <a href="#projects" className="hover:text-primary transition-colors">Projects</a>
+          <a href="#contact" className="hover:text-primary transition-colors">Contact</a>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
-        {isAdmin && (
-          <Link to="/admin" title="Admin Dashboard">
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              className="p-2 rounded-full hover:bg-accent transition-colors"
-            >
-              <LayoutDashboard size={20} />
-            </motion.div>
-          </Link>
-        )}
-        
-        {user ? (
-          <div className="flex items-center gap-2">
-            <span className="text-sm hidden sm:inline">{user.email}</span>
-            <button 
-              onClick={() => auth.signOut()}
-              className="p-2 rounded-full hover:bg-accent transition-colors"
-            >
-              <LogOut size={20} />
-            </button>
-          </div>
-        ) : (
-          <Link to="/login" className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors">
-            <User size={18} />
-            <span>Login</span>
-          </Link>
-        )}
-
-        <motion.div
-           initial={false}
-           animate={{ opacity: 1 }}
-           className="relative group ml-4"
+        <button
+          onClick={toggleMode}
+          className="p-3 rounded-xl bg-accent hover:bg-accent/80 transition-all flex items-center justify-center border border-border"
+          title={`Switch to ${mode === 'light' ? 'Dark' : mode === 'dark' ? 'Brown' : 'Light'} Mode`}
         >
-           <Link to="/admin" className="opacity-0 group-hover:opacity-100 absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] bg-black text-white px-2 py-1 rounded">
-              Only for admin
-           </Link>
-        </motion.div>
+          {mode === 'light' && <Sun size={20} />}
+          {mode === 'dark' && <Moon size={20} />}
+          {mode === 'brown' && <Coffee size={20} />}
+        </button>
+
+        <div className="hidden md:flex items-center gap-4">
+          {isAdmin && (
+            <Link to="/admin" className="flex items-center gap-2 text-xs font-black uppercase bg-primary/10 text-primary px-4 py-2 rounded-full hover:bg-primary hover:text-primary-foreground transition-all">
+              <LayoutDashboard size={14} />
+              Dashboard
+            </Link>
+          )}
+          
+          {user ? (
+            <div className="flex items-center gap-3 pl-4 border-l border-border">
+              <div className="flex flex-col items-end">
+                <span className="text-xs font-bold leading-none">{user.email?.split('@')[0]}</span>
+                <span className="text-[10px] text-muted-foreground uppercase">Logged In</span>
+              </div>
+              <button 
+                onClick={() => auth.signOut()}
+                className="p-2.5 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors border border-transparent hover:border-destructive/20"
+              >
+                <LogOut size={18} />
+              </button>
+            </div>
+          ) : (
+            <Link to="/login" className="flex items-center gap-2 text-xs font-bold uppercase bg-foreground text-background px-6 py-2.5 rounded-full hover:scale-105 transition-transform">
+              <User size={14} />
+              Login
+            </Link>
+          )}
+        </div>
+
+        <button 
+          className="lg:hidden p-2"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
       </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-24 left-6 right-6 glass rounded-3xl p-8 flex flex-col gap-6 lg:hidden shadow-2xl"
+          >
+            <a href="#about" onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-black">About</a>
+            <a href="#experience" onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-black">Experience</a>
+            <a href="#projects" onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-black">Projects</a>
+            <a href="#contact" onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-black">Contact</a>
+            <hr className="border-border" />
+            {!user && (
+              <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-black text-primary">Login</Link>
+            )}
+            {user && (
+               <button onClick={() => auth.signOut()} className="text-2xl font-black text-destructive text-left">Logout</button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }

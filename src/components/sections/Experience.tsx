@@ -1,47 +1,65 @@
 import { motion } from 'framer-motion';
 
 export default function Experience({ data }: { data: any[] }) {
-  const experiences = data.length > 0 ? data : [
+  const experiences = data && data.length > 0 ? data : [
     {
-      company: "Vawan Bivag",
-      role: "Site Engineer",
-      period: "2023 - Present",
-      description: "Managing site operations, structural monitoring, and architectural compliance for large-scale government buildings."
+      id: '1',
+      role: 'Site Engineer',
+      company: 'Vawan Bivag',
+      period: '2024 - Present',
+      description: 'Supervising large-scale construction sites, ensuring structural integrity and compliance with design specifications. Managing on-site teams and coordinating with architects.'
     },
     {
-      company: "Kathmandu University",
-      role: "Masters Student",
-      period: "2024 - Present",
-      description: "Specializing in advanced structural engineering and earthquake-resistant design."
+      id: '2',
+      role: 'Structural Designer (Freelance)',
+      company: 'Self-Employed',
+      period: '2023 - 2024',
+      description: 'Performed detailed structural analysis using ETABS and SAP2000 for residential and commercial buildings.'
     }
   ];
 
   return (
-    <section id="experience" className="space-y-12">
-      <div className="text-center space-y-4">
-        <h2 className="text-4xl md:text-5xl font-bold tracking-tighter">Timeline of Impact</h2>
-        <p className="text-muted-foreground max-w-xl mx-auto">Track record of professional growth and engineering excellence.</p>
+    <section id="experience" className="py-24">
+      <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
+        <div>
+          <h2 className="text-6xl md:text-8xl font-black tracking-tighter leading-none uppercase">
+            Career <br /> <span className="text-primary">Timeline</span>
+          </h2>
+        </div>
+        <p className="text-muted-foreground font-bold uppercase tracking-[0.3em] text-xs">
+          Professional Evolution
+        </p>
       </div>
 
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="space-y-4">
         {experiences.map((exp, index) => (
           <motion.div
-            key={index}
+            key={exp.id}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ delay: index * 0.1 }}
-            className="relative pl-8 border-l-2 border-primary/20 pb-8 last:pb-0"
+            className="group relative"
           >
-            <div className="absolute left-[-9px] top-0 w-4 h-4 rounded-full bg-primary" />
-            <div className="glass p-6 rounded-2xl border border-border/50 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex flex-wrap justify-between items-start gap-2 mb-4">
+            <div className="glass p-10 md:p-14 rounded-[3rem] border-2 border-transparent hover:border-primary/20 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div>
-                  <h3 className="text-xl font-bold">{exp.role}</h3>
-                  <p className="text-primary font-medium">{exp.company}</p>
+                  <h3 className="text-3xl font-black tracking-tight group-hover:text-primary transition-colors uppercase">
+                    {exp.role}
+                  </h3>
+                  <p className="text-xl font-bold opacity-60 uppercase tracking-widest">{exp.company}</p>
                 </div>
-                <span className="text-sm px-3 py-1 bg-primary/10 text-primary rounded-full">{exp.period}</span>
+                <div className="px-6 py-2 rounded-full border-2 border-primary/20 bg-primary/5 text-primary font-black uppercase tracking-widest text-sm whitespace-nowrap self-start md:self-center">
+                  {exp.period}
+                </div>
               </div>
-              <p className="text-muted-foreground">{exp.description}</p>
+              <p className="text-xl text-muted-foreground leading-relaxed max-w-4xl font-medium">
+                {exp.description}
+              </p>
+            </div>
+            {/* Number background decoration */}
+            <div className="absolute top-8 right-12 text-9xl font-black text-foreground/[0.02] pointer-events-none select-none italic">
+              0{index + 1}
             </div>
           </motion.div>
         ))}

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, limit, query } from 'firebase/firestore';
 
 interface AuthState {
   user: User | null;
@@ -24,8 +24,25 @@ export const useAuth = create<AuthState>((set) => ({
     const unsub = onAuthStateChanged(auth, async (user) => {
       set({ user, loading: true });
       if (user) {
-        const adminDoc = await getDoc(doc(db, 'admins', user.email || ''));
-        set({ isAdmin: adminDoc.exists(), loading: false });
+        try {
+          // Check if specific email is in admins collection
+          const adminDoc = await getDoc(doc(db, 'admins', user.email || ''));
+          let isAdmin = adminDoc.exists();
+
+          // Fallback: If no admins exist yet, allow the first user (bootstrap)
+          if (!isAdmin) {
+            const adminsRef = collection(db, 'admins');
+            const adminSnapshot = await getDocs(query(adminsRef, limit(1)));
+            if (adminSnapshot.empty) {
+              isAdmin = true;
+            }
+          }
+
+          set({ isAdmin, loading: false });
+        } catch (error) {
+          console.error("Auth init error:", error);
+          set({ isAdmin: false, loading: false });
+        }
       } else {
         set({ isAdmin: false, loading: false });
       }

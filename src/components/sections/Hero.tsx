@@ -56,15 +56,15 @@ export default function Hero({ data }: HeroProps) {
           >
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-primary text-[10px] font-black uppercase tracking-widest mb-8">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              {data?.badge || "Civil Engineer"}
+              {data?.badge || "Add badge from admin"}
             </span>
             
             <h1 className="text-6xl md:text-8xl lg:text-[10rem] font-black tracking-tighter mb-8 leading-[0.85] text-balance">
-              {data?.title || "NAYAN KUIKEL"}
+              {data?.title || "Add name from admin"}
             </h1>
             
             <p className="text-xl md:text-3xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-tight font-medium">
-              {data?.subtitle || "Building resilient infrastructure and digital experiences with precision and architectural elegance."}
+              {data?.subtitle || "Add subtitle from admin"}
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">

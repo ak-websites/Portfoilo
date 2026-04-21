@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { db, auth } from '../lib/firebase';
 import { useTheme, type ThemeSet } from '../store/useTheme';
 import { useContent } from '../store/useContent';
+import '../admin.css';
 import {
   doc,
   collection,
@@ -18,7 +19,7 @@ import { useNavigate } from 'react-router-dom';
 export default function Admin() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const { mode, themeSet, setMode, setThemeSet } = useTheme();
-  const { hero, about, projects, education, experience } = useContent();
+  const { hero, about, contact, projects, education, experience } = useContent();
   const [messages, setMessages] = useState<any[]>([]);
   const navigate = useNavigate();
 
@@ -32,11 +33,17 @@ export default function Admin() {
   const [projLink, setProjLink] = useState('');
 
   const [profileName, setProfileName] = useState(hero?.title || '');
+  const [profileBadge, setProfileBadge] = useState(hero?.badge || '');
   const [profileSubtitle, setProfileSubtitle] = useState(hero?.subtitle || '');
   const [profileBio, setProfileBio] = useState(about?.bio || '');
   const [profileImage, setProfileImage] = useState(about?.image || '');
   const [profileEducation, setProfileEducation] = useState(about?.education || '');
   const [profileCurrentRole, setProfileCurrentRole] = useState(about?.currentRole || '');
+  const [profileLinkedIn, setProfileLinkedIn] = useState(about?.linkedin || '');
+  const [contactHeadline, setContactHeadline] = useState(contact?.headline || '');
+  const [contactLinkedInLabel, setContactLinkedInLabel] = useState(contact?.linkedinLabel || '');
+  const [contactEmail, setContactEmail] = useState(contact?.email || '');
+  const [contactPhone, setContactPhone] = useState(contact?.phone || '');
   const [profileSkills, setProfileSkills] = useState('');
 
   const [expRole, setExpRole] = useState('');
@@ -59,7 +66,13 @@ export default function Admin() {
       setProfileCurrentRole(about.currentRole || '');
       setProfileSkills(Array.isArray(about.skills) ? about.skills.join(', ') : '');
     }
-  }, [hero, about]);
+    if (contact) {
+      setContactHeadline(contact.headline || '');
+      setContactLinkedInLabel(contact.linkedinLabel || '');
+      setContactEmail(contact.email || '');
+      setContactPhone(contact.phone || '');
+    }
+  }, [hero, about, contact]);
 
   useEffect(() => {
     const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
@@ -131,7 +144,11 @@ export default function Admin() {
         .map((skill) => skill.trim())
         .filter(Boolean);
 
-      await setDoc(doc(db, 'content', 'hero'), { title: profileName, subtitle: profileSubtitle }, { merge: true });
+      await setDoc(
+        doc(db, 'content', 'hero'),
+        { title: profileName, badge: profileBadge, subtitle: profileSubtitle },
+        { merge: true }
+      );
       await setDoc(
         doc(db, 'content', 'about'),
         {
@@ -139,7 +156,19 @@ export default function Admin() {
           image: profileImage,
           education: profileEducation,
           currentRole: profileCurrentRole,
+          linkedin: profileLinkedIn,
           skills: parsedSkills,
+        },
+        { merge: true }
+      );
+      await setDoc(
+        doc(db, 'content', 'contact'),
+        {
+          headline: contactHeadline,
+          email: contactEmail,
+          phone: contactPhone,
+          linkedin: profileLinkedIn,
+          linkedinLabel: contactLinkedInLabel,
         },
         { merge: true }
       );
@@ -262,9 +291,9 @@ export default function Admin() {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: 'linear-gradient(145deg, #0b0f16, #101826)', color: 'white', fontFamily: 'Inter, Arial, sans-serif' }}>
-      <div style={{ width: '250px', background: 'rgba(20, 26, 38, 0.9)', borderRight: '1px solid rgba(122, 162, 255, 0.25)', padding: '22px', display: 'flex', flexDirection: 'column', backdropFilter: 'blur(8px)' }}>
-        <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '30px', color: '#8FB2FF', letterSpacing: '1px' }}>ADMIN STUDIO</div>
+    <div style={{ display: 'flex', height: '100vh', background: 'hsl(var(--background))', color: 'hsl(var(--foreground))', fontFamily: 'Inter, Arial, sans-serif' }}>
+      <div style={{ width: '250px', background: 'hsl(var(--card))', borderRight: '1px solid hsl(var(--border))', padding: '22px', display: 'flex', flexDirection: 'column', backdropFilter: 'blur(8px)' }}>
+        <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '30px', color: 'hsl(var(--primary))', letterSpacing: '1px' }}>ADMIN STUDIO</div>
         <button className={`nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>Dashboard</button>
         <button className={`nav-btn ${activeTab === 'projects' ? 'active' : ''}`} onClick={() => setActiveTab('projects')}>Projects</button>
         <button className={`nav-btn ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>Profile</button>
@@ -327,6 +356,8 @@ export default function Admin() {
               <h3>Edit Profile</h3>
               <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Name</label>
               <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Name" />
+              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Hero Badge</label>
+              <input value={profileBadge} onChange={(e) => setProfileBadge(e.target.value)} placeholder="Civil Engineer" />
               <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Professional Title</label>
               <input value={profileSubtitle} onChange={(e) => setProfileSubtitle(e.target.value)} placeholder="Title" />
               <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Bio</label>
@@ -337,6 +368,16 @@ export default function Admin() {
               <input value={profileEducation} onChange={(e) => setProfileEducation(e.target.value)} placeholder="Education" />
               <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Current Role</label>
               <input value={profileCurrentRole} onChange={(e) => setProfileCurrentRole(e.target.value)} placeholder="Current role" />
+              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Email</label>
+              <input value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="admin@nayankuikel.com" />
+              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Phone</label>
+              <input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+977-XXXXXXXXXX" />
+              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Contact Headline</label>
+              <textarea value={contactHeadline} onChange={(e) => setContactHeadline(e.target.value)} placeholder="Available for new opportunities..." style={{ minHeight: '90px' }} />
+              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>LinkedIn URL</label>
+              <input value={profileLinkedIn} onChange={(e) => setProfileLinkedIn(e.target.value)} placeholder="https://www.linkedin.com/in/..." />
+              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>LinkedIn Label</label>
+              <input value={contactLinkedInLabel} onChange={(e) => setContactLinkedInLabel(e.target.value)} placeholder="Nayan Kuikel" />
               <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Skills (comma separated)</label>
               <input value={profileSkills} onChange={(e) => setProfileSkills(e.target.value)} placeholder="Skill 1, Skill 2, Skill 3" />
               <button className="save" onClick={updateProfile}>Update</button>

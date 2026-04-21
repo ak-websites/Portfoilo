@@ -99,13 +99,11 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
@@ -120,13 +118,36 @@
     --foreground: 32 40% 95%;
     --card: 28 20% 15%;
     --card-foreground: 32 40% 95%;
-    --primary: 32 60% 60%; /* Gold/Bronze */
     --primary-foreground: 28 20% 10%;
-    --accent: 32 60% 50%;
     --border: 32 30% 25%;
     --muted: 28 20% 20%;
     --muted-foreground: 32 20% 70%;
   }
+
+  /* Theme + Mode matrix (6 themes x 3 modes) */
+  [data-theme="architectural"][data-mode="light"] { --primary: 221 39% 11%; --accent: 221 39% 45%; }
+  [data-theme="architectural"][data-mode="dark"] { --primary: 220 60% 78%; --accent: 218 45% 58%; }
+  [data-theme="architectural"][data-mode="brown"] { --primary: 32 58% 62%; --accent: 27 42% 48%; }
+
+  [data-theme="concrete"][data-mode="light"] { --primary: 0 0% 25%; --accent: 0 0% 45%; }
+  [data-theme="concrete"][data-mode="dark"] { --primary: 0 0% 86%; --accent: 0 0% 66%; }
+  [data-theme="concrete"][data-mode="brown"] { --primary: 30 36% 58%; --accent: 28 28% 44%; }
+
+  [data-theme="luxury"][data-mode="light"] { --primary: 20 14% 4%; --accent: 32 30% 50%; }
+  [data-theme="luxury"][data-mode="dark"] { --primary: 36 44% 78%; --accent: 38 30% 56%; }
+  [data-theme="luxury"][data-mode="brown"] { --primary: 34 62% 61%; --accent: 26 44% 52%; }
+
+  [data-theme="nordic"][data-mode="light"] { --primary: 210 10% 23%; --accent: 200 15% 55%; }
+  [data-theme="nordic"][data-mode="dark"] { --primary: 201 41% 76%; --accent: 195 33% 62%; }
+  [data-theme="nordic"][data-mode="brown"] { --primary: 31 36% 64%; --accent: 27 28% 50%; }
+
+  [data-theme="precision"][data-mode="light"] { --primary: 230 60% 15%; --accent: 230 60% 50%; }
+  [data-theme="precision"][data-mode="dark"] { --primary: 228 73% 80%; --accent: 230 66% 66%; }
+  [data-theme="precision"][data-mode="brown"] { --primary: 30 58% 60%; --accent: 25 45% 50%; }
+
+  [data-theme="blueprint"][data-mode="light"] { --primary: 217 91% 20%; --accent: 217 91% 60%; }
+  [data-theme="blueprint"][data-mode="dark"] { --primary: 207 95% 80%; --accent: 206 84% 68%; }
+  [data-theme="blueprint"][data-mode="brown"] { --primary: 33 62% 62%; --accent: 26 50% 52%; }
 
   * {
     @apply border-border;

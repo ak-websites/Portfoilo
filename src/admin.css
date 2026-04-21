@@ -1,541 +1,90 @@
-import { useState, useEffect } from 'react';
-import { db, auth } from '../lib/firebase';
-import { useTheme } from '../store/useTheme';
-import {
-  doc,
-  collection,
-  addDoc,
-  deleteDoc,
-  query,
-  orderBy,
-  onSnapshot,
-  setDoc,
-  updateDoc,
-  getDocs,
-} from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
-
-export default function Admin() {
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
-  const { mode, setMode } = useTheme();
-  const navigate = useNavigate();
-
-  // Local state — fetched directly, not from shared store
-  const [projects, setProjects] = useState<any[]>([]);
-  const [experience, setExperience] = useState<any[]>([]);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [hero, setHero] = useState<any>(null);
-  const [about, setAbout] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Project form
-  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
-  const [projTitle, setProjTitle] = useState('');
-  const [projDesc, setProjDesc] = useState('');
-  const [projCategory, setProjCategory] = useState('Structural');
-
-  // Profile form
-  const [profileName, setProfileName] = useState('');
-  const [profileSubtitle, setProfileSubtitle] = useState('');
-  const [profileBio, setProfileBio] = useState('');
-
-  // Experience form
-  const [expRole, setExpRole] = useState('');
-  const [expCompany, setExpCompany] = useState('');
-  const [expPeriod, setExpPeriod] = useState('');
-  const [expDesc, setExpDesc] = useState('');
-
-  // Status feedback
-  const [statusMsg, setStatusMsg] = useState('');
-
-  const showStatus = (msg: string) => {
-    setStatusMsg(msg);
-    setTimeout(() => setStatusMsg(''), 3000);
-  };
-
-  // ─── Real-time listeners ───────────────────────────────────────────────────
-  useEffect(() => {
-    const unsubs: (() => void)[] = [];
-
-    // Hero content
-    unsubs.push(
-      onSnapshot(doc(db, 'content', 'hero'), (d) => {
-        const data = d.data() || {};
-        setHero(data);
-        setProfileName(data.title || '');
-        setProfileSubtitle(data.subtitle || '');
-      })
-    );
-
-    // About content
-    unsubs.push(
-      onSnapshot(doc(db, 'content', 'about'), (d) => {
-        const data = d.data() || {};
-        setAbout(data);
-        setProfileBio(data.bio || '');
-      })
-    );
-
-    // Projects — NO orderBy so missing 'order' field docs still appear
-    unsubs.push(
-      onSnapshot(collection(db, 'projects'), (s) => {
-        const docs = s.docs.map((d) => ({ id: d.id, ...d.data() }));
-        // Sort client-side: docs with 'order' field first, then by createdAt
-        docs.sort((a: any, b: any) => {
-          if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
-          if (a.order !== undefined) return -1;
-          if (b.order !== undefined) return 1;
-          return 0;
-        });
-        setProjects(docs);
-        setLoading(false);
-      })
-    );
-
-    // Experience — NO orderBy
-    unsubs.push(
-      onSnapshot(collection(db, 'experience'), (s) => {
-        const docs = s.docs.map((d) => ({ id: d.id, ...d.data() }));
-        docs.sort((a: any, b: any) => (b.order ?? 0) - (a.order ?? 0));
-        setExperience(docs);
-      })
-    );
-
-    // Messages
-    unsubs.push(
-      onSnapshot(
-        query(collection(db, 'messages'), orderBy('createdAt', 'desc')),
-        (s) => setMessages(s.docs.map((d) => ({ id: d.id, ...d.data() })))
-      )
-    );
-
-    return () => unsubs.forEach((u) => u());
-  }, []);
-
-  // ─── Actions ──────────────────────────────────────────────────────────────
-
-  const logout = () => {
-    auth.signOut();
-    navigate('/login');
-  };
-
-  const saveProject = async () => {
-    if (!projTitle.trim() || !projDesc.trim()) {
-      showStatus('⚠️ Fill in title and description');
-      return;
-    }
-    try {
-      if (editingProjectId) {
-        await updateDoc(doc(db, 'projects', editingProjectId), {
-          title: projTitle,
-          description: projDesc,
-          category: projCategory,
-        });
-        setEditingProjectId(null);
-        showStatus('✅ Project updated!');
-      } else {
-        await addDoc(collection(db, 'projects'), {
-          title: projTitle,
-          description: projDesc,
-          category: projCategory,
-          order: projects.length,
-          createdAt: new Date(),
-        });
-        showStatus('✅ Project added!');
-      }
-      setProjTitle('');
-      setProjDesc('');
-      setProjCategory('Structural');
-    } catch (err) {
-      console.error(err);
-      showStatus('❌ Error saving project. Check Firestore rules.');
-    }
-  };
-
-  const startEditProject = (p: any) => {
-    setEditingProjectId(p.id);
-    setProjTitle(p.title || '');
-    setProjDesc(p.description || '');
-    setProjCategory(p.category || 'Structural');
-    setActiveTab('projects');
-  };
-
-  const deleteProject = async (id: string) => {
-    if (window.confirm('Delete this project?')) {
-      try {
-        await deleteDoc(doc(db, 'projects', id));
-        showStatus('🗑️ Project deleted');
-      } catch (err) {
-        showStatus('❌ Delete failed. Check Firestore rules.');
-      }
-    }
-  };
-
-  const updateProfile = async () => {
-    try {
-      await setDoc(
-        doc(db, 'content', 'hero'),
-        { title: profileName, subtitle: profileSubtitle },
-        { merge: true }
-      );
-      await setDoc(doc(db, 'content', 'about'), { bio: profileBio }, { merge: true });
-      showStatus('✅ Profile updated!');
-    } catch (err) {
-      console.error(err);
-      showStatus('❌ Error updating profile');
-    }
-  };
-
-  const addExperience = async () => {
-    if (!expRole.trim() || !expCompany.trim()) {
-      showStatus('⚠️ Fill in role and company');
-      return;
-    }
-    try {
-      await addDoc(collection(db, 'experience'), {
-        role: expRole,
-        company: expCompany,
-        period: expPeriod,
-        description: expDesc,
-        order: experience.length,
-        createdAt: new Date(),
-      });
-      setExpRole('');
-      setExpCompany('');
-      setExpPeriod('');
-      setExpDesc('');
-      showStatus('✅ Experience added!');
-    } catch (err) {
-      showStatus('❌ Error adding experience');
-    }
-  };
-
-  const deleteExperience = async (id: string) => {
-    if (window.confirm('Delete this experience?')) {
-      await deleteDoc(doc(db, 'experience', id));
-      showStatus('🗑️ Deleted');
-    }
-  };
-
-  const toggleTheme = async () => {
-    const nextMode = mode === 'light' ? 'dark' : mode === 'dark' ? 'brown' : 'light';
-    setMode(nextMode);
-    await setDoc(doc(db, 'settings', 'global'), { mode: nextMode }, { merge: true });
-    showStatus(`✅ Theme set to ${nextMode}`);
-  };
-
-  const deleteMessage = async (id: string) => {
-    if (window.confirm('Delete message?')) {
-      await deleteDoc(doc(db, 'messages', id));
-    }
-  };
-
-  // ─── Render ───────────────────────────────────────────────────────────────
-
-  const tabs = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'projects', label: `Projects (${projects.length})` },
-    { id: 'profile', label: 'Profile' },
-    { id: 'experience', label: `Experience (${experience.length})` },
-    { id: 'theme', label: 'Theme' },
-    { id: 'messages', label: `Messages (${messages.length})` },
-  ];
-
-  return (
-    <div style={{ display: 'flex', height: '100vh', background: '#0f0f0f', color: 'white', fontFamily: 'Arial, sans-serif' }}>
-      {/* Sidebar */}
-      <div style={{ width: '240px', background: '#1c1c1c', padding: '20px', display: 'flex', flexDirection: 'column', gap: '6px', borderRight: '1px solid #2a2a2a' }}>
-        <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '20px', color: '#4A90D9', letterSpacing: '0.2em' }}>
-          NK ADMIN
-        </div>
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            style={{
-              padding: '12px 16px',
-              background: activeTab === t.id ? '#4A90D9' : 'transparent',
-              border: `1px solid ${activeTab === t.id ? '#4A90D9' : '#333'}`,
-              color: activeTab === t.id ? 'white' : '#aaa',
-              cursor: 'pointer',
-              textAlign: 'left',
-              borderRadius: '8px',
-              fontSize: '13px',
-              transition: 'all 0.2s',
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <button onClick={() => navigate('/')} style={outlineBtn}>← View Site</button>
-          <button onClick={logout} style={{ ...outlineBtn, borderColor: '#ff4444', color: '#ff4444' }}>Logout</button>
-        </div>
-      </div>
-
-      {/* Main */}
-      <div style={{ flex: 1, padding: '30px', overflowY: 'auto' }}>
-        {/* Status toast */}
-        {statusMsg && (
-          <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#1c1c1c', border: '1px solid #4A90D9', padding: '12px 20px', borderRadius: '8px', zIndex: 999, fontSize: '13px' }}>
-            {statusMsg}
-          </div>
-        )}
-
-        {/* ── Dashboard ── */}
-        {activeTab === 'dashboard' && (
-          <div>
-            <h2 style={heading}>Dashboard</h2>
-            <div style={card}>
-              <p style={{ color: '#aaa', fontSize: '14px', marginBottom: '20px' }}>
-                Logged in as: <b style={{ color: 'white' }}>{auth.currentUser?.email}</b>
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                {[
-                  { label: 'Projects', count: projects.length },
-                  { label: 'Experiences', count: experience.length },
-                  { label: 'Messages', count: messages.length },
-                ].map((s) => (
-                  <div key={s.label} style={{ background: '#0f0f0f', border: '1px solid #333', borderRadius: '8px', padding: '20px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#4A90D9' }}>{s.count}</div>
-                    <div style={{ fontSize: '12px', color: '#666', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Projects ── */}
-        {activeTab === 'projects' && (
-          <div>
-            <h2 style={heading}>Projects</h2>
-            <div style={card}>
-              <h3 style={subheading}>{editingProjectId ? '✏️ Edit Project' : '+ Add Project'}</h3>
-              <label style={labelStyle}>Title</label>
-              <input value={projTitle} onChange={(e) => setProjTitle(e.target.value)} placeholder="Project title" style={inputStyle} />
-              <label style={labelStyle}>Category</label>
-              <input value={projCategory} onChange={(e) => setProjCategory(e.target.value)} placeholder="e.g. Structural, Design, Management" style={inputStyle} />
-              <label style={labelStyle}>Description</label>
-              <textarea value={projDesc} onChange={(e) => setProjDesc(e.target.value)} placeholder="Description" style={{ ...inputStyle, minHeight: '100px' }} />
-              <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-                <button onClick={saveProject} style={primaryBtn}>{editingProjectId ? 'Update' : 'Save'}</button>
-                {editingProjectId && (
-                  <button onClick={() => { setEditingProjectId(null); setProjTitle(''); setProjDesc(''); }} style={outlineBtn}>Cancel</button>
-                )}
-              </div>
-            </div>
-
-            <div style={card}>
-              <h3 style={subheading}>All Projects ({projects.length})</h3>
-              {loading && <p style={{ color: '#666', fontSize: '13px' }}>Loading...</p>}
-              {!loading && projects.length === 0 && (
-                <p style={{ color: '#555', fontSize: '13px' }}>No projects found in Firestore.</p>
-              )}
-              {projects.map((p: any) => (
-                <div key={p.id} style={{ borderBottom: '1px solid #2a2a2a', padding: '14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{p.title}</p>
-                    <p style={{ fontSize: '12px', color: '#4A90D9', marginBottom: '4px' }}>{p.category}</p>
-                    <p style={{ fontSize: '12px', color: '#888' }}>{p.description}</p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                    <button onClick={() => startEditProject(p)} style={editBtn}>Edit</button>
-                    <button onClick={() => deleteProject(p.id)} style={deleteBtn}>Delete</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Profile ── */}
-        {activeTab === 'profile' && (
-          <div>
-            <h2 style={heading}>Profile</h2>
-            <div style={card}>
-              <label style={labelStyle}>Name / Hero Title</label>
-              <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Nayan Kuikel" style={inputStyle} />
-              <label style={labelStyle}>Professional Subtitle</label>
-              <input value={profileSubtitle} onChange={(e) => setProfileSubtitle(e.target.value)} placeholder="Civil Engineer & Project Manager" style={inputStyle} />
-              <label style={labelStyle}>Bio (About section)</label>
-              <textarea value={profileBio} onChange={(e) => setProfileBio(e.target.value)} placeholder="Bio..." style={{ ...inputStyle, minHeight: '150px' }} />
-              <button onClick={updateProfile} style={{ ...primaryBtn, marginTop: '16px' }}>Update Profile</button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Experience ── */}
-        {activeTab === 'experience' && (
-          <div>
-            <h2 style={heading}>Experience</h2>
-            <div style={card}>
-              <h3 style={subheading}>+ Add Experience</h3>
-              <label style={labelStyle}>Role</label>
-              <input value={expRole} onChange={(e) => setExpRole(e.target.value)} placeholder="Site Engineer" style={inputStyle} />
-              <label style={labelStyle}>Company</label>
-              <input value={expCompany} onChange={(e) => setExpCompany(e.target.value)} placeholder="Company name" style={inputStyle} />
-              <label style={labelStyle}>Period</label>
-              <input value={expPeriod} onChange={(e) => setExpPeriod(e.target.value)} placeholder="2024 - Present" style={inputStyle} />
-              <label style={labelStyle}>Description</label>
-              <textarea value={expDesc} onChange={(e) => setExpDesc(e.target.value)} placeholder="What you did..." style={{ ...inputStyle, minHeight: '80px' }} />
-              <button onClick={addExperience} style={{ ...primaryBtn, marginTop: '16px' }}>Save</button>
-            </div>
-
-            <div style={card}>
-              <h3 style={subheading}>All Experience ({experience.length})</h3>
-              {experience.length === 0 && <p style={{ color: '#555', fontSize: '13px' }}>No experience entries found.</p>}
-              {experience.map((e: any) => (
-                <div key={e.id} style={{ borderBottom: '1px solid #2a2a2a', padding: '14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-                  <div>
-                    <p style={{ fontWeight: 'bold' }}>{e.role} <span style={{ color: '#4A90D9' }}>@ {e.company}</span></p>
-                    <p style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>{e.period}</p>
-                    {e.description && <p style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>{e.description}</p>}
-                  </div>
-                  <button onClick={() => deleteExperience(e.id)} style={deleteBtn}>Delete</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Theme ── */}
-        {activeTab === 'theme' && (
-          <div>
-            <h2 style={heading}>Theme</h2>
-            <div style={card}>
-              <p style={{ marginBottom: '16px', color: '#aaa', fontSize: '14px' }}>
-                Current Mode: <b style={{ color: 'white', textTransform: 'uppercase' }}>{mode}</b>
-              </p>
-              <p style={{ marginBottom: '20px', fontSize: '12px', color: '#555' }}>
-                Cycles: Light → Dark → Brown → Light
-              </p>
-              <button onClick={toggleTheme} style={primaryBtn}>Toggle Mode</button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Messages ── */}
-        {activeTab === 'messages' && (
-          <div>
-            <h2 style={heading}>Messages ({messages.length})</h2>
-            {messages.length === 0 && (
-              <div style={card}>
-                <p style={{ color: '#555', fontSize: '13px' }}>No messages yet.</p>
-              </div>
-            )}
-            {messages.map((m: any) => (
-              <div key={m.id} style={{ ...card, position: 'relative', marginBottom: '12px' }}>
-                <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{m.name} <span style={{ color: '#4A90D9', fontWeight: 'normal', fontSize: '13px' }}>({m.email})</span></p>
-                <p style={{ fontSize: '14px', color: '#ccc', margin: '10px 0' }}>{m.message}</p>
-                <p style={{ fontSize: '11px', color: '#555' }}>
-                  {m.createdAt?.toDate?.().toLocaleString() || 'No timestamp'}
-                </p>
-                <button
-                  onClick={() => deleteMessage(m.id)}
-                  style={{ ...deleteBtn, position: 'absolute', top: '20px', right: '20px' }}
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+.nav-btn {
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  text-align: left;
+  transition: 0.2s ease;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  width: 100%;
+  border-radius: 10px;
 }
 
-// ─── Shared style objects ────────────────────────────────────────────────────
+.nav-btn:hover,
+.nav-btn.active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
+}
 
-const heading: React.CSSProperties = {
-  fontSize: '22px',
-  fontWeight: 'bold',
-  marginBottom: '20px',
-  color: '#4A90D9',
-  letterSpacing: '0.1em',
-  textTransform: 'uppercase',
-};
+.card {
+  background: hsl(var(--card));
+  padding: 30px;
+  margin-bottom: 20px;
+  border-radius: 14px;
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.12);
+}
 
-const subheading: React.CSSProperties = {
-  fontSize: '15px',
-  fontWeight: 'bold',
-  marginBottom: '16px',
-  color: '#ddd',
-};
+.card input,
+.card textarea,
+.card select {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--input));
+  color: hsl(var(--foreground));
+  font-family: inherit;
+  border-radius: 8px;
+}
 
-const card: React.CSSProperties = {
-  background: '#1c1c1c',
-  padding: '24px',
-  marginBottom: '20px',
-  borderRadius: '12px',
-  border: '1px solid #2a2a2a',
-};
+button.save {
+  margin-top: 20px;
+  padding: 12px 25px;
+  background: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary));
+  cursor: pointer;
+  color: hsl(var(--primary-foreground));
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 12px;
+  border-radius: 8px;
+}
 
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: '11px',
-  color: '#666',
-  marginTop: '14px',
-  marginBottom: '4px',
-  textTransform: 'uppercase',
-  letterSpacing: '0.1em',
-};
+button.save.alt {
+  margin-top: 0;
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+  border-color: hsl(var(--border));
+}
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '10px 14px',
-  background: '#0f0f0f',
-  border: '1px solid #333',
-  color: 'white',
-  fontFamily: 'inherit',
-  fontSize: '14px',
-  borderRadius: '6px',
-  boxSizing: 'border-box',
-};
+.theme-chip {
+  padding: 12px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  border-radius: 10px;
+  cursor: pointer;
+}
 
-const primaryBtn: React.CSSProperties = {
-  padding: '10px 24px',
-  background: '#4A90D9',
-  border: 'none',
-  cursor: 'pointer',
-  color: 'white',
-  fontWeight: 'bold',
-  textTransform: 'uppercase',
-  fontSize: '12px',
-  letterSpacing: '0.1em',
-  borderRadius: '6px',
-};
+.theme-chip.active {
+  background: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
 
-const outlineBtn: React.CSSProperties = {
-  padding: '10px 24px',
-  background: 'transparent',
-  border: '1px solid #555',
-  cursor: 'pointer',
-  color: '#aaa',
-  fontWeight: 'bold',
-  textTransform: 'uppercase',
-  fontSize: '12px',
-  letterSpacing: '0.1em',
-  borderRadius: '6px',
-};
+.section {
+  display: none;
+}
 
-const editBtn: React.CSSProperties = {
-  background: '#4A90D9',
-  border: 'none',
-  color: 'white',
-  padding: '6px 12px',
-  cursor: 'pointer',
-  fontSize: '12px',
-  borderRadius: '4px',
-};
-
-const deleteBtn: React.CSSProperties = {
-  background: 'transparent',
-  border: '1px solid #ff4444',
-  color: '#ff4444',
-  padding: '6px 12px',
-  cursor: 'pointer',
-  fontSize: '12px',
-  borderRadius: '4px',
-};
+.section.active {
+  display: block;
+}

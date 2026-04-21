@@ -62,7 +62,7 @@ export default function Contact({ data }: { data: any }) {
                   LET'S <br /> <span className="text-primary">CONNECT</span>
                 </h2>
                 <p className="text-xl text-muted-foreground font-medium max-w-md leading-relaxed">
-                  Available for new opportunities in structural engineering, project management, and site supervision.
+                  {data?.headline || 'Update contact headline from admin.'}
                 </p>
               </motion.div>
 
@@ -70,20 +70,20 @@ export default function Contact({ data }: { data: any }) {
                 <ContactInfoItem 
                   icon={<Mail className="text-primary" size={24} />} 
                   label="Email" 
-                  value={data?.email || "admin@nayankuikel.com"}
-                  href={`mailto:${data?.email || 'admin@nayankuikel.com'}`}
+                  value={data?.email || 'Add email from admin'}
+                  href={data?.email ? `mailto:${data.email}` : '#'}
                 />
                 <ContactInfoItem 
                   icon={<Phone className="text-primary" size={24} />} 
                   label="Phone" 
-                  value={data?.phone || "+977-XXXXXXXXXX"}
-                  href={`tel:${data?.phone || '#'}`}
+                  value={data?.phone || 'Add phone from admin'}
+                  href={data?.phone ? `tel:${data.phone}` : '#'}
                 />
                 <ContactInfoItem 
                   icon={<Link className="text-primary" size={24} />} 
                   label="LinkedIn" 
-                  value="Nayan Kuikel"
-                  href={data?.linkedin || "https://www.linkedin.com/in/nayan-kuikel-379b43323/"}
+                  value={data?.linkedinLabel || 'Add LinkedIn from admin'}
+                  href={data?.linkedin || '#'}
                 />
               </div>
             </div>

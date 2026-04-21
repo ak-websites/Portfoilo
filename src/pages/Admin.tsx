@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db, auth } from '../lib/firebase';
+import { db, auth, storage } from '../lib/firebase';
 import { useTheme, type ThemeSet } from '../store/useTheme';
 import { useContent } from '../store/useContent';
 import '../admin.css';
@@ -14,12 +14,14 @@ import {
   setDoc,
   updateDoc,
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
+import { sanitizeImageUrl, sanitizeUrl } from '../utils/security';
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const { mode, themeSet, setMode, setThemeSet } = useTheme();
-  const { hero, about, contact, projects, education, experience } = useContent();
+  const { hero, about, contact, projects, education, experience, gallery } = useContent();
   const [messages, setMessages] = useState<any[]>([]);
   const navigate = useNavigate();
 
@@ -30,6 +32,8 @@ export default function Admin() {
   const [projDesc, setProjDesc] = useState('');
   const [projCategory, setProjCategory] = useState('');
   const [projImage, setProjImage] = useState('');
+  const [projImageFile, setProjImageFile] = useState<File | null>(null);
+  const [projUploading, setProjUploading] = useState(false);
   const [projLink, setProjLink] = useState('');
 
   const [profileName, setProfileName] = useState(hero?.title || '');
@@ -55,6 +59,10 @@ export default function Admin() {
   const [eduInstitution, setEduInstitution] = useState('');
   const [eduPeriod, setEduPeriod] = useState('');
   const [eduDescription, setEduDescription] = useState('');
+  const [galleryUrl, setGalleryUrl] = useState('');
+  const [gallerySpan, setGallerySpan] = useState('col-span-1 row-span-1');
+  const [galleryImageFile, setGalleryImageFile] = useState<File | null>(null);
+  const [galleryUploading, setGalleryUploading] = useState(false);
 
   useEffect(() => {
     if (hero) setProfileName(hero.title || '');
@@ -87,13 +95,15 @@ export default function Admin() {
 
   const saveProject = async () => {
     if (!projTitle || !projDesc || !projCategory) return alert('Fill all required fields');
+    const safeProjectImage = sanitizeImageUrl(projImage, '');
+    const safeProjectLink = sanitizeUrl(projLink, '#');
     try {
       const payload = {
         title: projTitle,
         description: projDesc,
         category: projCategory,
-        image: projImage || '',
-        link: projLink || '#',
+        image: safeProjectImage,
+        link: safeProjectLink,
       };
 
       if (editingProjectId) {
@@ -113,12 +123,29 @@ export default function Admin() {
     }
   };
 
+  const uploadProjectImage = async () => {
+    if (!projImageFile) return alert('Choose an image first');
+    try {
+      setProjUploading(true);
+      const imageRef = ref(storage, `projects/${Date.now()}-${projImageFile.name}`);
+      await uploadBytes(imageRef, projImageFile);
+      const url = await getDownloadURL(imageRef);
+      setProjImage(url);
+      alert('Project image uploaded and filled!');
+    } catch {
+      alert('Error uploading project image');
+    } finally {
+      setProjUploading(false);
+    }
+  };
+
   const resetProjectForm = () => {
     setEditingProjectId(null);
     setProjTitle('');
     setProjDesc('');
     setProjCategory('');
     setProjImage('');
+    setProjImageFile(null);
     setProjLink('');
   };
 
@@ -268,6 +295,42 @@ export default function Admin() {
     await deleteDoc(doc(db, 'education', id));
   };
 
+  const addGalleryItem = async () => {
+    const safeGalleryUrl = sanitizeImageUrl(galleryUrl, '');
+    if (!safeGalleryUrl) return alert('Add a valid image URL');
+    await addDoc(collection(db, 'gallery'), {
+      url: safeGalleryUrl,
+      span: gallerySpan,
+      order: gallery.length,
+      createdAt: new Date(),
+    });
+    setGalleryUrl('');
+    setGallerySpan('col-span-1 row-span-1');
+    setGalleryImageFile(null);
+    alert('Visual portfolio item added!');
+  };
+
+  const uploadGalleryImage = async () => {
+    if (!galleryImageFile) return alert('Choose an image first');
+    try {
+      setGalleryUploading(true);
+      const imageRef = ref(storage, `gallery/${Date.now()}-${galleryImageFile.name}`);
+      await uploadBytes(imageRef, galleryImageFile);
+      const url = await getDownloadURL(imageRef);
+      setGalleryUrl(url);
+      alert('Visual image uploaded and filled!');
+    } catch {
+      alert('Error uploading gallery image');
+    } finally {
+      setGalleryUploading(false);
+    }
+  };
+
+  const removeGalleryItem = async (id: string) => {
+    if (!confirm('Delete this visual portfolio item?')) return;
+    await deleteDoc(doc(db, 'gallery', id));
+  };
+
   const toggleTheme = async () => {
     const nextMode = mode === 'light' ? 'dark' : mode === 'dark' ? 'brown' : 'light';
     setMode(nextMode);
@@ -299,6 +362,7 @@ export default function Admin() {
         <button className={`nav-btn ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>Profile</button>
         <button className={`nav-btn ${activeTab === 'education' ? 'active' : ''}`} onClick={() => setActiveTab('education')}>Education</button>
         <button className={`nav-btn ${activeTab === 'experience' ? 'active' : ''}`} onClick={() => setActiveTab('experience')}>Job Experience</button>
+        <button className={`nav-btn ${activeTab === 'gallery' ? 'active' : ''}`} onClick={() => setActiveTab('gallery')}>Visual Portfolio</button>
         <button className={`nav-btn ${activeTab === 'theme' ? 'active' : ''}`} onClick={() => setActiveTab('theme')}>Theme</button>
         <button className={`nav-btn ${activeTab === 'messages' ? 'active' : ''}`} onClick={() => setActiveTab('messages')}>Messages</button>
         <button className="nav-btn" onClick={() => navigate('/')}>Exit Site</button>
@@ -326,6 +390,21 @@ export default function Admin() {
               <textarea value={projDesc} onChange={(e) => setProjDesc(e.target.value)} placeholder="Description" style={{ minHeight: '100px' }} />
               <input value={projCategory} onChange={(e) => setProjCategory(e.target.value)} placeholder="Category (e.g. Engineering)" />
               <input value={projImage} onChange={(e) => setProjImage(e.target.value)} placeholder="Image URL (optional)" />
+              {projImage && (
+                <img
+                  src={sanitizeImageUrl(projImage)}
+                  alt="Project preview"
+                  style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #333', marginTop: '10px' }}
+                />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setProjImageFile(e.target.files?.[0] || null)}
+              />
+              <button className="save alt" onClick={uploadProjectImage} disabled={projUploading}>
+                {projUploading ? 'Uploading...' : 'Upload Image'}
+              </button>
               <input value={projLink} onChange={(e) => setProjLink(e.target.value)} placeholder="Project Link (optional)" />
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button className="save" onClick={saveProject}>{editingProjectId ? 'Update' : 'Save'}</button>
@@ -441,6 +520,60 @@ export default function Admin() {
                     <button className="save alt" onClick={() => startEditExperience(item)}>Edit</button>
                     <button className="save alt" style={{ background: '#5a2222' }} onClick={() => removeExperience(item.id)}>Delete</button>
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'gallery' && (
+          <div className="section active">
+            <div className="card">
+              <h3>Add Visual Portfolio Item</h3>
+              <input
+                value={galleryUrl}
+                onChange={(e) => setGalleryUrl(e.target.value)}
+                placeholder="Image URL"
+              />
+              {galleryUrl && (
+                <img
+                  src={sanitizeImageUrl(galleryUrl)}
+                  alt="Visual preview"
+                  style={{ width: '100%', maxHeight: '220px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #333', marginTop: '10px' }}
+                />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setGalleryImageFile(e.target.files?.[0] || null)}
+              />
+              <button className="save alt" onClick={uploadGalleryImage} disabled={galleryUploading}>
+                {galleryUploading ? 'Uploading...' : 'Upload Image'}
+              </button>
+              <select value={gallerySpan} onChange={(e) => setGallerySpan(e.target.value)}>
+                <option value="col-span-1 row-span-1">Normal (1x1)</option>
+                <option value="col-span-2 row-span-1">Wide (2x1)</option>
+                <option value="col-span-1 row-span-2">Tall (1x2)</option>
+                <option value="col-span-2 row-span-2">Large (2x2)</option>
+              </select>
+              <button className="save" onClick={addGalleryItem}>Add Visual</button>
+            </div>
+            <div className="card">
+              <h3>Visual Portfolio List</h3>
+              {gallery.map((item: any) => (
+                <div key={item.id} style={{ borderBottom: '1px solid #333', padding: '10px 0', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <img
+                      src={sanitizeImageUrl(item.url)}
+                      alt="Portfolio visual"
+                      style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #333' }}
+                    />
+                    <div>
+                      <p style={{ fontSize: '13px' }}>{item.url}</p>
+                      <p style={{ fontSize: '11px', color: '#888' }}>{item.span || 'col-span-1 row-span-1'}</p>
+                    </div>
+                  </div>
+                  <button className="save alt" style={{ background: '#5a2222' }} onClick={() => removeGalleryItem(item.id)}>Delete</button>
                 </div>
               ))}
             </div>

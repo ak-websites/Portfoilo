@@ -68,19 +68,28 @@ export default function Hero({ data }: HeroProps) {
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <a 
-                href="#projects" 
-                className="group relative px-10 py-5 bg-primary text-primary-foreground rounded-2xl font-black uppercase tracking-widest overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-primary/20"
+              <motion.a
+                href="#projects"
+                whileHover={{ y: -4, scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+                className="group relative inline-flex items-center gap-3 px-10 py-5 bg-primary text-primary-foreground rounded-2xl font-black uppercase tracking-widest overflow-hidden shadow-2xl shadow-primary/20"
               >
                 <span className="relative z-10">View Projects</span>
-                <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-              </a>
-              <a 
-                href="#contact" 
-                className="px-10 py-5 bg-background border-2 border-border rounded-2xl font-black uppercase tracking-widest hover:bg-accent transition-all active:scale-95"
+                <span className="relative z-10 text-lg transition-transform duration-300 group-hover:translate-x-1">→</span>
+                <span className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                <span className="absolute -inset-x-2 top-0 h-[2px] bg-white/50 opacity-0 group-hover:opacity-100 group-hover:animate-pulse" />
+              </motion.a>
+              <motion.a
+                href="#contact"
+                whileHover={{ y: -4, scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+                className="group inline-flex items-center gap-3 px-10 py-5 bg-background border-2 border-border rounded-2xl font-black uppercase tracking-widest hover:bg-accent transition-colors duration-300"
               >
-                Get in Touch
-              </a>
+                <span>Get in Touch</span>
+                <span className="text-lg transition-transform duration-300 group-hover:translate-x-1">↗</span>
+              </motion.a>
             </div>
           </motion.div>
         </div>

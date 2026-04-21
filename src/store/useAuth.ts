@@ -27,13 +27,18 @@ export const useAuth = create<AuthState>((set) => ({
       set({ user, loading: true, authLoading: true });
       
       if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        const userData = userDoc.data();
-        set({ 
-          isAdmin: userData?.role === 'admin',
-          loading: false,
-          authLoading: false
-        });
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          const userData = userDoc.data();
+          set({ 
+            isAdmin: userData?.role === 'admin',
+            loading: false,
+            authLoading: false
+          });
+        } catch {
+          // Fail closed: if role lookup fails, do not grant admin privileges.
+          set({ isAdmin: false, loading: false, authLoading: false });
+        }
       } else {
         set({ isAdmin: false, loading: false, authLoading: false });
       }

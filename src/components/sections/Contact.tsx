@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Send, CheckCircle, AlertCircle, Mail, Phone, Link } from 'lucide-react';
 import { db } from '../../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { sanitizeUrl } from '../../utils/security';
 
 const contactSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -71,19 +72,19 @@ export default function Contact({ data }: { data: any }) {
                   icon={<Mail className="text-primary" size={24} />} 
                   label="Email" 
                   value={data?.email || 'Add email from admin'}
-                  href={data?.email ? `mailto:${data.email}` : '#'}
+                  href={data?.email ? sanitizeUrl(`mailto:${data.email}`) : '#'}
                 />
                 <ContactInfoItem 
                   icon={<Phone className="text-primary" size={24} />} 
                   label="Phone" 
                   value={data?.phone || 'Add phone from admin'}
-                  href={data?.phone ? `tel:${data.phone}` : '#'}
+                  href={data?.phone ? sanitizeUrl(`tel:${data.phone}`) : '#'}
                 />
                 <ContactInfoItem 
                   icon={<Link className="text-primary" size={24} />} 
                   label="LinkedIn" 
                   value={data?.linkedinLabel || 'Add LinkedIn from admin'}
-                  href={data?.linkedin || '#'}
+                  href={sanitizeUrl(data?.linkedin)}
                 />
               </div>
             </div>

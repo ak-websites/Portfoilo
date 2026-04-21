@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { sanitizeImageUrl } from '../../utils/security';
 
 export default function Gallery({ data }: { data: any[] }) {
   const items = data && data.length > 0 ? data : [
@@ -33,7 +34,7 @@ export default function Gallery({ data }: { data: any[] }) {
             className={`${item.span || 'col-span-1 row-span-1'} relative overflow-hidden rounded-[2rem] group`}
           >
             <img 
-              src={item.url} 
+              src={sanitizeImageUrl(item.url)} 
               alt="Work gallery" 
               className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110"
             />

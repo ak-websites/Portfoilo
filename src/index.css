@@ -26,6 +26,10 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -154,6 +158,12 @@
   }
   body {
     @apply bg-background text-foreground transition-colors duration-300 antialiased selection:bg-primary selection:text-primary-foreground;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 }
 

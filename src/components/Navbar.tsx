@@ -49,11 +49,8 @@ export default function Navbar() {
             <span className="text-[9px] uppercase tracking-[0.3em] text-primary/60 font-black">Authorized_Access</span>
           </div>
           
-          <div className="absolute -bottom-12 left-0 opacity-0 group-hover:opacity-100 transition-all pointer-events-none translate-y-2 group-hover:translate-y-0">
-            <span className="bg-destructive text-destructive-foreground text-[9px] px-3 py-1.5 rounded-full font-black uppercase tracking-widest shadow-lg">
-              Authorized Personnel Only
-            </span>
-          </div>
+          
+          
         </div>
 
         <div className="hidden lg:flex items-center gap-8 text-sm font-bold uppercase tracking-widest text-muted-foreground">

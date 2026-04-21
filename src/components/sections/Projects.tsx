@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExternalLink, ArrowRight } from 'lucide-react';
+import { sanitizeImageUrl, sanitizeUrl } from '../../utils/security';
 
 export default function Projects({ data }: { data: any[] }) {
   const [filter, setFilter] = useState('All');
@@ -51,7 +52,7 @@ export default function Projects({ data }: { data: any[] }) {
             >
               <div className="aspect-[4/3] overflow-hidden">
                 <img 
-                  src={project.image} 
+                  src={sanitizeImageUrl(project.image)} 
                   alt={project.title} 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
@@ -64,7 +65,9 @@ export default function Projects({ data }: { data: any[] }) {
                 
                 <div className="pt-6 flex items-center justify-between">
                   <a 
-                    href={project.link} 
+                    href={sanitizeUrl(project.link)}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex items-center gap-2 font-black uppercase tracking-widest text-[10px] group/btn"
                   >
                     View Project <ArrowRight size={14} className="group-hover/btn:translate-x-2 transition-transform" />

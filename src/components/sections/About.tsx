@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { GraduationCap, Briefcase, Award } from 'lucide-react';
 
 export default function About({ data }: { data: any }) {
-  const bio = data?.bio || "Highly dedicated Civil Engineer with a passion for building sustainable and resilient infrastructure. Currently pursuing Masters in Engineering from Kathmandu University (KU). Experienced in site management, structural analysis, and team coordination. Bridging the gap between engineering precision and modern architectural aesthetics.";
+  const bio = data?.bio || '';
 
   return (
     <section id="about" className="py-24">
@@ -14,11 +14,17 @@ export default function About({ data }: { data: any }) {
           className="relative group"
         >
           <div className="aspect-[4/5] rounded-[3rem] overflow-hidden border-8 border-background shadow-2xl relative z-10">
-            <img 
-              src={data?.image || "https://images.unsplash.com/photo-1503387762-592dea58ef23?auto=format&fit=crop&q=80"} 
-              alt="Nayan Kuikel" 
-              className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
-            />
+            {data?.image ? (
+              <img
+                src={data.image}
+                alt="Nayan Kuikel"
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+              />
+            ) : (
+              <div className="w-full h-full bg-accent/20 flex items-center justify-center text-sm uppercase tracking-widest text-muted-foreground">
+                Add profile image from admin
+              </div>
+            )}
           </div>
           <div className="absolute -inset-4 bg-primary/20 rounded-[3.5rem] -z-10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-accent/20 rounded-full blur-3xl" />
@@ -43,17 +49,17 @@ export default function About({ data }: { data: any }) {
             <AboutMetric 
               icon={<GraduationCap className="text-primary" />} 
               label="Education" 
-              value={data?.education || "Masters in KU (Pursuing)"} 
+              value={data?.education || ''} 
             />
             <AboutMetric 
               icon={<Briefcase className="text-primary" />} 
               label="Current Role" 
-              value={data?.currentRole || "Professional Site Engineer"} 
+              value={data?.currentRole || ''} 
             />
             <AboutMetric 
               icon={<Award className="text-primary" />} 
               label="Expertise" 
-              value={data?.skills?.length > 0 ? data.skills.join(', ') : "Structural Design, ETABS, Site Supervision"} 
+              value={data?.skills?.length > 0 ? data.skills.join(', ') : ''} 
             />
           </div>
 

@@ -5,32 +5,7 @@ import { ExternalLink, ArrowRight } from 'lucide-react';
 export default function Projects({ data }: { data: any[] }) {
   const [filter, setFilter] = useState('All');
   
-  const projects = data && data.length > 0 ? data : [
-    {
-      id: '1',
-      title: 'Structural Integrity Analysis',
-      category: 'Engineering',
-      description: 'Comprehensive assessment of concrete structures using advanced ETABS modeling and field inspection.',
-      image: 'https://images.unsplash.com/photo-1541888946425-d81bb19480c5?auto=format&fit=crop&q=80',
-      link: '#'
-    },
-    {
-      id: '2',
-      title: 'Modern Residential Complex',
-      category: 'Design',
-      description: 'Site supervision for a 5-story residential building with complex architectural details.',
-      image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80',
-      link: '#'
-    },
-    {
-      id: '3',
-      title: 'Vawan Bivag Site Ops',
-      category: 'Management',
-      description: 'Coordinating large scale governmental project logistics and technical site inspections.',
-      image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&q=80',
-      link: '#'
-    }
-  ];
+  const projects = data || [];
 
   const categories = ['All', ...new Set(projects.map(p => p.category))];
   const filteredProjects = filter === 'All' ? projects : projects.filter(p => p.category === filter);
@@ -58,6 +33,11 @@ export default function Projects({ data }: { data: any[] }) {
       </div>
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
+        {projects.length === 0 && (
+          <div className="md:col-span-2 xl:col-span-3 glass rounded-[2rem] p-10 text-center text-muted-foreground">
+            No projects yet. Add projects from the admin panel.
+          </div>
+        )}
         <AnimatePresence mode="popLayout">
           {filteredProjects.map((project, index) => (
             <motion.div

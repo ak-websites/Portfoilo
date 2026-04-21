@@ -7,12 +7,14 @@ interface ContentState {
   about: any;
   contact: any;
   projects: any[];
+  education: any[];
   experience: any[];
   gallery: any[];
   setHero: (hero: any) => void;
   setAbout: (about: any) => void;
   setContact: (contact: any) => void;
   setProjects: (projects: any[]) => void;
+  setEducation: (education: any[]) => void;
   setExperience: (experience: any[]) => void;
   setGallery: (gallery: any[]) => void;
   syncContent: () => () => void;
@@ -23,12 +25,14 @@ export const useContent = create<ContentState>((set) => ({
   about: null,
   contact: null,
   projects: [],
+  education: [],
   experience: [],
   gallery: [],
   setHero: (hero) => set({ hero }),
   setAbout: (about) => set({ about }),
   setContact: (contact) => set({ contact }),
   setProjects: (projects) => set({ projects }),
+  setEducation: (education) => set({ education }),
   setExperience: (experience) => set({ experience }),
   setGallery: (gallery) => set({ gallery }),
   syncContent: () => {
@@ -38,6 +42,9 @@ export const useContent = create<ContentState>((set) => ({
       onSnapshot(doc(db, 'content', 'contact'), (d) => set({ contact: d.data() })),
       onSnapshot(query(collection(db, 'projects'), orderBy('order', 'asc')), (s) => 
         set({ projects: s.docs.map(d => ({ id: d.id, ...d.data() })) })
+      ),
+      onSnapshot(query(collection(db, 'education'), orderBy('order', 'desc')), (s) =>
+        set({ education: s.docs.map(d => ({ id: d.id, ...d.data() })) })
       ),
       onSnapshot(query(collection(db, 'experience'), orderBy('order', 'desc')), (s) => 
         set({ experience: s.docs.map(d => ({ id: d.id, ...d.data() })) })

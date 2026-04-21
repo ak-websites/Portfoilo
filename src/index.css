@@ -161,3 +161,23 @@
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
+
+.section-shell {
+  position: relative;
+  margin-top: 3rem;
+}
+
+.section-divider {
+  height: 1px;
+  width: 100%;
+  margin: 0 0 4rem 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--color-primary) 22%, transparent) 20%,
+    color-mix(in oklab, var(--color-accent) 38%, transparent) 50%,
+    color-mix(in oklab, var(--color-primary) 22%, transparent) 80%,
+    transparent 100%
+  );
+  opacity: 0.85;
+}

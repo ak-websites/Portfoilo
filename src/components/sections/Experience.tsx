@@ -1,37 +1,27 @@
 import { motion } from 'framer-motion';
 
 export default function Experience({ data }: { data: any[] }) {
-  const experiences = data && data.length > 0 ? data : [
-    {
-      id: '1',
-      role: 'Site Engineer',
-      company: 'Vawan Bivag',
-      period: '2024 - Present',
-      description: 'Supervising large-scale construction sites, ensuring structural integrity and compliance with design specifications. Managing on-site teams and coordinating with architects.'
-    },
-    {
-      id: '2',
-      role: 'Structural Designer (Freelance)',
-      company: 'Self-Employed',
-      period: '2023 - 2024',
-      description: 'Performed detailed structural analysis using ETABS and SAP2000 for residential and commercial buildings.'
-    }
-  ];
+  const experiences = data || [];
 
   return (
     <section id="experience" className="py-24">
       <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
         <div>
           <h2 className="text-6xl md:text-8xl font-black tracking-tighter leading-none uppercase">
-            Career <br /> <span className="text-primary">Timeline</span>
+            Job <br /> <span className="text-primary">Experience</span>
           </h2>
         </div>
         <p className="text-muted-foreground font-bold uppercase tracking-[0.3em] text-xs">
-          Professional Evolution
+          Professional Track Record
         </p>
       </div>
 
       <div className="space-y-4">
+        {experiences.length === 0 && (
+          <div className="glass p-10 rounded-[2rem] text-center text-muted-foreground">
+            No experience entries yet. Add experience from the admin panel.
+          </div>
+        )}
         {experiences.map((exp, index) => (
           <motion.div
             key={exp.id}

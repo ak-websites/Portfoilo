@@ -10,6 +10,11 @@ interface HeroProps {
 }
 
 export default function Hero({ data }: HeroProps) {
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Background Layer */}
@@ -28,20 +33,12 @@ export default function Hero({ data }: HeroProps) {
         
         {/* Floating Shapes */}
         <motion.div 
-          animate={{ 
-            x: [0, 50, 0], 
-            y: [0, 30, 0],
-            rotate: [0, 10, 0]
-          }}
+          animate={{ x: [0, 50, 0], y: [0, 30, 0], rotate: [0, 10, 0] }}
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
           className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]"
         />
         <motion.div 
-          animate={{ 
-            x: [0, -50, 0], 
-            y: [0, -30, 0],
-            rotate: [0, -10, 0]
-          }}
+          animate={{ x: [0, -50, 0], y: [0, -30, 0], rotate: [0, -10, 0] }}
           transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
           className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[100px]"
         />
@@ -67,41 +64,51 @@ export default function Hero({ data }: HeroProps) {
               {data?.subtitle || "Add subtitle from admin"}
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <motion.a
-                href="#projects"
-                whileHover={{ y: -4, scale: 1.03 }}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <motion.button
+                onClick={() => scrollTo('projects')}
+                whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.97 }}
-                transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-                className="group relative inline-flex items-center gap-3 px-10 py-5 bg-primary text-primary-foreground rounded-2xl font-black uppercase tracking-widest overflow-hidden shadow-2xl shadow-primary/20"
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="group relative inline-flex items-center gap-3 px-10 py-5 bg-primary text-primary-foreground rounded-2xl font-black uppercase tracking-widest overflow-hidden shadow-xl shadow-primary/20 cursor-pointer"
               >
-                <span className="relative z-10">View Projects</span>
-                <span className="relative z-10 text-lg transition-transform duration-300 group-hover:translate-x-1">→</span>
+                <span className="relative z-10 text-sm">View Projects</span>
+                <motion.span 
+                  className="relative z-10 text-lg"
+                  animate={{ x: [0, 4, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                >→</motion.span>
                 <span className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                <span className="absolute -inset-x-2 top-0 h-[2px] bg-white/50 opacity-0 group-hover:opacity-100 group-hover:animate-pulse" />
-              </motion.a>
-              <motion.a
-                href="#contact"
-                whileHover={{ y: -4, scale: 1.03 }}
+              </motion.button>
+
+              <motion.button
+                onClick={() => scrollTo('contact')}
+                whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.97 }}
-                transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-                className="group inline-flex items-center gap-3 px-10 py-5 bg-background border-2 border-border rounded-2xl font-black uppercase tracking-widest hover:bg-accent transition-colors duration-300"
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="group inline-flex items-center gap-3 px-10 py-5 bg-background/80 backdrop-blur-sm border-2 border-border rounded-2xl font-black uppercase tracking-widest text-sm hover:border-primary/40 hover:bg-primary/5 transition-all duration-300 cursor-pointer"
               >
                 <span>Get in Touch</span>
-                <span className="text-lg transition-transform duration-300 group-hover:translate-x-1">↗</span>
-              </motion.a>
+                <motion.span 
+                  className="text-lg text-primary"
+                  animate={{ rotate: [0, 15, 0] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                >↗</motion.span>
+              </motion.button>
             </div>
           </motion.div>
         </div>
       </div>
 
-      {/* Engineering Elements */}
+      {/* Bottom fade */}
       <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-background to-transparent z-10" />
       
+      {/* Scroll indicator */}
       <motion.div 
         animate={{ y: [0, 10, 0] }}
         transition={{ repeat: Infinity, duration: 2 }}
-        className="absolute bottom-12 left-1/2 -translate-x-1/2 w-8 h-14 border-2 border-primary/20 rounded-full flex justify-center p-2 z-20"
+        className="absolute bottom-12 left-1/2 -translate-x-1/2 w-8 h-14 border-2 border-primary/20 rounded-full flex justify-center p-2 z-20 cursor-pointer"
+        onClick={() => scrollTo('about')}
       >
         <motion.div 
           animate={{ height: ["20%", "60%", "20%"] }}
@@ -110,7 +117,7 @@ export default function Hero({ data }: HeroProps) {
         />
       </motion.div>
       
-      {/* Decorative vertical line */}
+      {/* Decorative vertical lines */}
       <div className="absolute left-12 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-border to-transparent hidden xl:block" />
       <div className="absolute right-12 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-border to-transparent hidden xl:block" />
     </section>

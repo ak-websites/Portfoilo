@@ -13,15 +13,25 @@ import {
   onSnapshot,
   setDoc,
   updateDoc,
+  getDocs,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
 import { sanitizeImageUrl, sanitizeUrl } from '../utils/security';
+import { useAuth } from '../store/useAuth';
+
+// ── Skill Category types ──────────────────────────────────────
+interface SkillItem { name: string; level: number; }
+interface SkillCategory { label: string; skills: SkillItem[]; }
+
+// ── Admin User type ───────────────────────────────────────────
+interface AdminUser { id: string; email: string; role: string; }
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const { mode, themeSet, setMode, setThemeSet } = useTheme();
   const { hero, about, contact, projects, education, experience, gallery } = useContent();
+  const { user: currentUser } = useAuth();
   const [messages, setMessages] = useState<any[]>([]);
   const navigate = useNavigate();
 
@@ -37,23 +47,19 @@ export default function Admin() {
   const [projLink, setProjLink] = useState('');
 
   // Profile / Hero fields
-  const [profileName, setProfileName] = useState(hero?.title || '');
-  const [profileBadge, setProfileBadge] = useState(hero?.badge || '');
-  const [profileSubtitle, setProfileSubtitle] = useState(hero?.subtitle || '');
-  const [profileBio, setProfileBio] = useState(about?.bio || '');
-  const [profileImage, setProfileImage] = useState(about?.image || '');
-  const [profileEducation, setProfileEducation] = useState(about?.education || '');
-  const [profileCurrentRole, setProfileCurrentRole] = useState(about?.currentRole || '');
-  const [profileLinkedIn, setProfileLinkedIn] = useState(about?.linkedin || '');
+  const [profileName, setProfileName] = useState('');
+  const [profileBadge, setProfileBadge] = useState('');
+  const [profileSubtitle, setProfileSubtitle] = useState('');
+  const [profileBio, setProfileBio] = useState('');
+  const [profileImage, setProfileImage] = useState('');
+  const [profileEducation, setProfileEducation] = useState('');
+  const [profileCurrentRole, setProfileCurrentRole] = useState('');
+  const [profileLinkedIn, setProfileLinkedIn] = useState('');
   const [profileSkills, setProfileSkills] = useState('');
-
-  // Contact fields
-  const [contactHeadline, setContactHeadline] = useState(contact?.headline || '');
-  const [contactLinkedInLabel, setContactLinkedInLabel] = useState(contact?.linkedinLabel || '');
-  const [contactEmail, setContactEmail] = useState(contact?.email || '');
-  const [contactPhone, setContactPhone] = useState(contact?.phone || '');
-
-  // ── NEW: Dynamic Stat Card fields ──────────────────────────
+  const [contactHeadline, setContactHeadline] = useState('');
+  const [contactLinkedInLabel, setContactLinkedInLabel] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const [profileFirstJobYear, setProfileFirstJobYear] = useState('');
   const [profileProjectCount, setProfileProjectCount] = useState('');
   const [profileTeamsLed, setProfileTeamsLed] = useState('');
@@ -77,6 +83,18 @@ export default function Admin() {
   const [galleryImageFile, setGalleryImageFile] = useState<File | null>(null);
   const [galleryUploading, setGalleryUploading] = useState(false);
 
+  // ── Skills state ──────────────────────────────────────────────
+  const [skillCategories, setSkillCategories] = useState<SkillCategory[]>([]);
+  const [newCatLabel, setNewCatLabel] = useState('');
+  const [editingCatIdx, setEditingCatIdx] = useState<number | null>(null);
+  const [newSkillName, setNewSkillName] = useState('');
+  const [newSkillLevel, setNewSkillLevel] = useState(80);
+
+  // ── Admin Management state ────────────────────────────────────
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [adminLoading, setAdminLoading] = useState(false);
+
   useEffect(() => {
     if (hero) {
       setProfileName(hero.title || '');
@@ -89,11 +107,13 @@ export default function Admin() {
       setProfileEducation(about.education || '');
       setProfileCurrentRole(about.currentRole || '');
       setProfileSkills(Array.isArray(about.skills) ? about.skills.join(', ') : '');
-      // Stat card fields
       setProfileFirstJobYear(about.firstJobYear?.toString() || '');
       setProfileProjectCount(about.projectCount?.toString() || '');
       setProfileTeamsLed(about.teamsLed?.toString() || '');
       setProfileLocation(about.location || '');
+      if (about.skillCategories?.length > 0) {
+        setSkillCategories(about.skillCategories);
+      }
     }
     if (contact) {
       setContactHeadline(contact.headline || '');
@@ -109,12 +129,21 @@ export default function Admin() {
     return () => unsub();
   }, []);
 
-  const logout = () => {
-    auth.signOut();
-    navigate('/login');
-  };
+  // Load all users for admin management
+  useEffect(() => {
+    if (activeTab !== 'admins') return;
+    setAdminLoading(true);
+    const q = query(collection(db, 'users'));
+    const unsub = onSnapshot(q, (snap) => {
+      setAdminUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() } as AdminUser)));
+      setAdminLoading(false);
+    });
+    return () => unsub();
+  }, [activeTab]);
 
-  // ── Project CRUD ────────────────────────────────────────────
+  const logout = () => { auth.signOut(); navigate('/login'); };
+
+  // ── Project CRUD ─────────────────────────────────────────────
   const saveProject = async () => {
     if (!projTitle || !projDesc || !projCategory) return alert('Fill all required fields');
     const safeProjectImage = sanitizeImageUrl(projImage, '');
@@ -123,10 +152,8 @@ export default function Admin() {
       const payload = { title: projTitle, description: projDesc, category: projCategory, image: safeProjectImage, link: safeProjectLink };
       if (editingProjectId) {
         await updateDoc(doc(db, 'projects', editingProjectId), payload);
-        alert('Project updated!');
       } else {
         await addDoc(collection(db, 'projects'), { ...payload, order: projects.length, createdAt: new Date() });
-        alert('Project added!');
       }
       resetProjectForm();
     } catch { alert('Error saving project'); }
@@ -161,53 +188,96 @@ export default function Admin() {
     await deleteDoc(doc(db, 'projects', id));
   };
 
-  // ── Profile Save ─────────────────────────────────────────────
+  // ── Profile Save ──────────────────────────────────────────────
   const updateProfile = async () => {
     try {
       const parsedSkills = profileSkills.split(',').map((s) => s.trim()).filter(Boolean);
-
-      await setDoc(doc(db, 'content', 'hero'), {
-        title: profileName,
-        badge: profileBadge,
-        subtitle: profileSubtitle,
-      }, { merge: true });
-
+      await setDoc(doc(db, 'content', 'hero'), { title: profileName, badge: profileBadge, subtitle: profileSubtitle }, { merge: true });
       await setDoc(doc(db, 'content', 'about'), {
-        bio: profileBio,
-        image: profileImage,
-        education: profileEducation,
-        currentRole: profileCurrentRole,
-        linkedin: profileLinkedIn,
-        skills: parsedSkills,
-        // ── Stat card fields ──────────────────────────────────
+        bio: profileBio, image: profileImage, education: profileEducation,
+        currentRole: profileCurrentRole, linkedin: profileLinkedIn, skills: parsedSkills,
         firstJobYear: profileFirstJobYear ? parseInt(profileFirstJobYear) : null,
-        // If admin left projectCount blank, we store null → About will hide the card
         projectCount: profileProjectCount !== '' ? parseInt(profileProjectCount) : null,
         teamsLed: profileTeamsLed !== '' ? parseInt(profileTeamsLed) : null,
         location: profileLocation || null,
       }, { merge: true });
-
       await setDoc(doc(db, 'content', 'contact'), {
-        headline: contactHeadline,
-        email: contactEmail,
-        phone: contactPhone,
-        linkedin: profileLinkedIn,
-        linkedinLabel: contactLinkedInLabel,
+        headline: contactHeadline, email: contactEmail, phone: contactPhone,
+        linkedin: profileLinkedIn, linkedinLabel: contactLinkedInLabel,
       }, { merge: true });
-
       alert('Profile updated!');
     } catch { alert('Error updating profile'); }
   };
 
-  // ── Experience CRUD ──────────────────────────────────────────
+  // ── Skills CRUD ───────────────────────────────────────────────
+  const saveSkillCategories = async () => {
+    try {
+      await setDoc(doc(db, 'content', 'about'), { skillCategories }, { merge: true });
+      alert('Skills saved!');
+    } catch { alert('Error saving skills'); }
+  };
+
+  const addCategory = () => {
+    if (!newCatLabel.trim()) return alert('Enter a category name');
+    setSkillCategories([...skillCategories, { label: newCatLabel.trim(), skills: [] }]);
+    setNewCatLabel('');
+  };
+
+  const removeCategory = (idx: number) => {
+    if (!confirm('Remove this category?')) return;
+    setSkillCategories(skillCategories.filter((_, i) => i !== idx));
+    if (editingCatIdx === idx) setEditingCatIdx(null);
+  };
+
+  const addSkillToCategory = (catIdx: number) => {
+    if (!newSkillName.trim()) return alert('Enter a skill name');
+    const updated = [...skillCategories];
+    updated[catIdx].skills.push({ name: newSkillName.trim(), level: newSkillLevel });
+    setSkillCategories(updated);
+    setNewSkillName('');
+    setNewSkillLevel(80);
+  };
+
+  const removeSkill = (catIdx: number, skillIdx: number) => {
+    const updated = [...skillCategories];
+    updated[catIdx].skills.splice(skillIdx, 1);
+    setSkillCategories(updated);
+  };
+
+  const updateSkillLevel = (catIdx: number, skillIdx: number, level: number) => {
+    const updated = [...skillCategories];
+    updated[catIdx].skills[skillIdx].level = level;
+    setSkillCategories(updated);
+  };
+
+  // ── Admin Management ──────────────────────────────────────────
+  const findUserByEmail = async (email: string) => {
+    const snap = await getDocs(collection(db, 'users'));
+    return snap.docs.find(d => d.data().email === email);
+  };
+
+  const grantAdmin = async () => {
+    if (!newAdminEmail.trim()) return alert('Enter email');
+    const userDoc = await findUserByEmail(newAdminEmail.trim());
+    if (!userDoc) return alert('User not found. They must log in first to create an account.');
+    await updateDoc(doc(db, 'users', userDoc.id), { role: 'admin' });
+    setNewAdminEmail('');
+    alert(`Admin granted to ${newAdminEmail}`);
+  };
+
+  const revokeAdmin = async (userId: string, email: string) => {
+    if (userId === currentUser?.uid) return alert('You cannot revoke your own admin access!');
+    if (!confirm(`Revoke admin from ${email}?`)) return;
+    await updateDoc(doc(db, 'users', userId), { role: 'user' });
+  };
+
+  // ── Experience/Education/Gallery (unchanged) ──────────────────
   const saveExperience = async () => {
     if (!expRole || !expCompany) return alert('Fill fields');
     if (editingExperienceId) {
       await updateDoc(doc(db, 'experience', editingExperienceId), { role: expRole, company: expCompany, period: expPeriod, description: expDescription || '' });
-      alert('Experience updated!');
     } else {
       await addDoc(collection(db, 'experience'), { role: expRole, company: expCompany, period: expPeriod, description: expDescription || '', order: experience.length });
-      alert('Experience added!');
     }
     resetExperienceForm();
   };
@@ -224,15 +294,12 @@ export default function Admin() {
     await deleteDoc(doc(db, 'experience', id));
   };
 
-  // ── Education CRUD ───────────────────────────────────────────
   const saveEducation = async () => {
     if (!eduDegree || !eduInstitution) return alert('Fill fields');
     if (editingEducationId) {
       await updateDoc(doc(db, 'education', editingEducationId), { degree: eduDegree, institution: eduInstitution, period: eduPeriod, description: eduDescription || '' });
-      alert('Education updated!');
     } else {
       await addDoc(collection(db, 'education'), { degree: eduDegree, institution: eduInstitution, period: eduPeriod, description: eduDescription || '', order: education.length });
-      alert('Education added!');
     }
     resetEducationForm();
   };
@@ -249,13 +316,11 @@ export default function Admin() {
     await deleteDoc(doc(db, 'education', id));
   };
 
-  // ── Gallery CRUD ─────────────────────────────────────────────
   const addGalleryItem = async () => {
     const safeGalleryUrl = sanitizeImageUrl(galleryUrl, '');
     if (!safeGalleryUrl) return alert('Add a valid image URL');
     await addDoc(collection(db, 'gallery'), { url: safeGalleryUrl, span: gallerySpan, order: gallery.length, createdAt: new Date() });
     setGalleryUrl(''); setGallerySpan('col-span-1 row-span-1'); setGalleryImageFile(null);
-    alert('Visual portfolio item added!');
   };
 
   const uploadGalleryImage = async () => {
@@ -265,7 +330,6 @@ export default function Admin() {
       const imageRef = ref(storage, `gallery/${Date.now()}-${galleryImageFile.name}`);
       await uploadBytes(imageRef, galleryImageFile);
       setGalleryUrl(await getDownloadURL(imageRef));
-      alert('Visual image uploaded!');
     } catch { alert('Error uploading gallery image'); }
     finally { setGalleryUploading(false); }
   };
@@ -275,7 +339,6 @@ export default function Admin() {
     await deleteDoc(doc(db, 'gallery', id));
   };
 
-  // ── Theme ────────────────────────────────────────────────────
   const toggleTheme = async () => {
     const nextMode = mode === 'light' ? 'dark' : mode === 'dark' ? 'brown' : 'light';
     setMode(nextMode);
@@ -296,24 +359,35 @@ export default function Admin() {
     if (confirm('Delete message?')) await deleteDoc(doc(db, 'messages', id));
   };
 
-  // Helper for derived years-experience preview
-  const previewYears = profileFirstJobYear
-    ? new Date().getFullYear() - parseInt(profileFirstJobYear)
-    : null;
+  const previewYears = profileFirstJobYear ? new Date().getFullYear() - parseInt(profileFirstJobYear) : null;
 
-  // ── Render ───────────────────────────────────────────────────
+  const TABS = [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'projects', label: 'Projects' },
+    { id: 'profile', label: 'Profile' },
+    { id: 'skills', label: 'Skills' },
+    { id: 'education', label: 'Education' },
+    { id: 'experience', label: 'Job Experience' },
+    { id: 'gallery', label: 'Visual Portfolio' },
+    { id: 'theme', label: 'Theme' },
+    { id: 'messages', label: 'Messages' },
+    { id: 'admins', label: 'Admins' },
+  ];
+
   return (
     <div style={{ display: 'flex', height: '100vh', background: 'hsl(var(--background))', color: 'hsl(var(--foreground))', fontFamily: 'Inter, Arial, sans-serif' }}>
       {/* Sidebar */}
-      <div style={{ width: '250px', background: 'hsl(var(--card))', borderRight: '1px solid hsl(var(--border))', padding: '22px', display: 'flex', flexDirection: 'column', backdropFilter: 'blur(8px)' }}>
-        <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '30px', color: 'hsl(var(--primary))', letterSpacing: '1px' }}>ADMIN STUDIO</div>
-        {['dashboard','projects','profile','education','experience','gallery','theme','messages'].map((tab) => (
-          <button key={tab} className={`nav-btn ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
-            {tab === 'experience' ? 'Job Experience' : tab === 'gallery' ? 'Visual Portfolio' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+      <div style={{ width: '240px', background: 'hsl(var(--card))', borderRight: '1px solid hsl(var(--border))', padding: '20px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+        <div style={{ fontSize: '18px', fontWeight: 900, marginBottom: '24px', color: 'hsl(var(--primary))', letterSpacing: '1px', textTransform: 'uppercase' }}>
+          Admin Studio
+        </div>
+        {TABS.map((tab) => (
+          <button key={tab.id} className={`nav-btn ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
+            {tab.label}
           </button>
         ))}
-        <button className="nav-btn" onClick={() => navigate('/')}>Exit Site</button>
-        <button className="nav-btn" style={{ marginTop: 'auto' }} onClick={logout}>Logout</button>
+        <button className="nav-btn" onClick={() => navigate('/')}>← Exit Site</button>
+        <button className="nav-btn" style={{ marginTop: 'auto', color: 'hsl(var(--destructive))' }} onClick={logout}>Logout</button>
       </div>
 
       {/* Main content */}
@@ -321,27 +395,23 @@ export default function Admin() {
 
         {/* ── DASHBOARD ─────────────────────────────────────── */}
         {activeTab === 'dashboard' && (
-          <div className="section active">
-            <div className="card">
-              <h2>Welcome Admin</h2>
-              <p>Manage your website content easily from here.</p>
-              <div style={{ marginTop: '20px', fontSize: '14px', color: '#888' }}>
-                <p>Logged in as: {auth.currentUser?.email}</p>
-              </div>
-            </div>
+          <div className="card">
+            <h2 style={{ fontWeight: 900, fontSize: '22px', marginBottom: '8px' }}>Welcome, Admin</h2>
+            <p style={{ color: 'hsl(var(--muted-foreground))', marginBottom: '16px' }}>Manage your portfolio content from here.</p>
+            <p style={{ fontSize: '13px', color: 'hsl(var(--muted-foreground))' }}>Logged in as: <b>{auth.currentUser?.email}</b></p>
           </div>
         )}
 
         {/* ── PROJECTS ──────────────────────────────────────── */}
         {activeTab === 'projects' && (
-          <div className="section active">
+          <>
             <div className="card">
               <h3>{editingProjectId ? 'Edit Project' : 'Add Project'}</h3>
               <input value={projTitle} onChange={(e) => setProjTitle(e.target.value)} placeholder="Project title" />
               <textarea value={projDesc} onChange={(e) => setProjDesc(e.target.value)} placeholder="Description" style={{ minHeight: '100px' }} />
               <input value={projCategory} onChange={(e) => setProjCategory(e.target.value)} placeholder="Category (e.g. Engineering)" />
               <input value={projImage} onChange={(e) => setProjImage(e.target.value)} placeholder="Image URL (optional)" />
-              {projImage && <img src={sanitizeImageUrl(projImage)} alt="Preview" style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #333', marginTop: '10px' }} />}
+              {projImage && <img src={sanitizeImageUrl(projImage)} alt="Preview" style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '10px', marginTop: '10px' }} />}
               <input type="file" accept="image/*" onChange={(e) => setProjImageFile(e.target.files?.[0] || null)} />
               <button className="save alt" onClick={uploadProjectImage} disabled={projUploading}>{projUploading ? 'Uploading...' : 'Upload Image'}</button>
               <input value={projLink} onChange={(e) => setProjLink(e.target.value)} placeholder="Project Link (optional)" />
@@ -353,10 +423,10 @@ export default function Admin() {
             <div className="card">
               <h3>Project List</h3>
               {projects.map((project: any) => (
-                <div key={project.id} style={{ borderBottom: '1px solid #333', padding: '10px 0', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                <div key={project.id} style={{ borderBottom: '1px solid hsl(var(--border))', padding: '10px 0', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
                   <div>
                     <p><b>{project.title}</b> ({project.category})</p>
-                    <p style={{ fontSize: '12px', color: '#aaa' }}>{project.description}</p>
+                    <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))' }}>{project.description?.slice(0, 80)}...</p>
                   </div>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button className="save alt" onClick={() => startEditProject(project)}>Edit</button>
@@ -365,128 +435,150 @@ export default function Admin() {
                 </div>
               ))}
             </div>
-          </div>
+          </>
         )}
 
         {/* ── PROFILE ───────────────────────────────────────── */}
         {activeTab === 'profile' && (
-          <div className="section active">
-            <div className="card">
-              <h3>Edit Profile</h3>
-
-              <label style={labelStyle}>Name</label>
-              <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Name" />
-
-              <label style={labelStyle}>Hero Badge</label>
-              <input value={profileBadge} onChange={(e) => setProfileBadge(e.target.value)} placeholder="e.g. Civil Engineer" />
-
-              <label style={labelStyle}>Professional Title</label>
-              <input value={profileSubtitle} onChange={(e) => setProfileSubtitle(e.target.value)} placeholder="Title" />
-
-              <label style={labelStyle}>Bio</label>
-              <textarea value={profileBio} onChange={(e) => setProfileBio(e.target.value)} placeholder="Bio" style={{ minHeight: '150px' }} />
-
-              <label style={labelStyle}>About Profile Image URL</label>
-              <input value={profileImage} onChange={(e) => setProfileImage(e.target.value)} placeholder="https://..." />
-
-              <label style={labelStyle}>Education</label>
-              <input value={profileEducation} onChange={(e) => setProfileEducation(e.target.value)} placeholder="Education" />
-
-              <label style={labelStyle}>Current Role</label>
-              <input value={profileCurrentRole} onChange={(e) => setProfileCurrentRole(e.target.value)} placeholder="Current role" />
-
-              <label style={labelStyle}>Email</label>
-              <input value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="email@example.com" />
-
-              <label style={labelStyle}>Phone</label>
-              <input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+977-XXXXXXXXXX" />
-
-              <label style={labelStyle}>Contact Headline</label>
-              <textarea value={contactHeadline} onChange={(e) => setContactHeadline(e.target.value)} placeholder="Available for new opportunities..." style={{ minHeight: '90px' }} />
-
-              <label style={labelStyle}>LinkedIn URL</label>
-              <input value={profileLinkedIn} onChange={(e) => setProfileLinkedIn(e.target.value)} placeholder="https://www.linkedin.com/in/..." />
-
-              <label style={labelStyle}>LinkedIn Label</label>
-              <input value={contactLinkedInLabel} onChange={(e) => setContactLinkedInLabel(e.target.value)} placeholder="Nayan Kuikel" />
-
-              <label style={labelStyle}>Skills (comma separated)</label>
-              <input value={profileSkills} onChange={(e) => setProfileSkills(e.target.value)} placeholder="Skill 1, Skill 2, Skill 3" />
-
-              {/* ── STAT CARDS ─────────────────────────────── */}
-              <hr style={{ borderColor: 'hsl(var(--border))', margin: '22px 0 12px' }} />
-              <p style={{ fontSize: '11px', color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '4px' }}>
-                Stat Cards
-              </p>
-              <p style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>
-                These populate the 4 cards shown below your bio. Leave blank to hide a card.
-              </p>
-
-              <label style={labelStyle}>
-                First Job Year&nbsp;
-                <span style={{ opacity: 0.5 }}>(auto-calculates "Years Experience")</span>
-              </label>
-              <input
-                type="number"
-                value={profileFirstJobYear}
-                onChange={(e) => setProfileFirstJobYear(e.target.value)}
-                placeholder="e.g. 2016"
-                min="1980"
-                max={new Date().getFullYear()}
-              />
-              {previewYears !== null && (
-                <p style={{ fontSize: '11px', color: 'hsl(var(--primary))', marginTop: '4px' }}>
-                  → Will show: <b>{previewYears}+ Years Experience</b>
-                </p>
-              )}
-
-              <label style={labelStyle}>
-                Projects Delivered&nbsp;
-                <span style={{ opacity: 0.5 }}>(manual override — leave blank to hide)</span>
-              </label>
-              <input
-                type="number"
-                value={profileProjectCount}
-                onChange={(e) => setProfileProjectCount(e.target.value)}
-                placeholder="e.g. 40"
-                min="0"
-              />
-              {profileProjectCount === '' && (
-                <p style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
-                  Blank → card hidden. Enter a number to show it.
-                </p>
-              )}
-
-              <label style={labelStyle}>
-                Teams Led&nbsp;
-                <span style={{ opacity: 0.5 }}>(minimum number of teams led)</span>
-              </label>
-              <input
-                type="number"
-                value={profileTeamsLed}
-                onChange={(e) => setProfileTeamsLed(e.target.value)}
-                placeholder="e.g. 12"
-                min="0"
-              />
-
-              <label style={labelStyle}>
-                Location&nbsp;
-                <span style={{ opacity: 0.5 }}>(shown on "Based In" card)</span>
-              </label>
-              <input
-                value={profileLocation}
-                onChange={(e) => setProfileLocation(e.target.value)}
-                placeholder="e.g. Kathmandu, Nepal"
-              />
-
-              <button className="save" onClick={updateProfile}>Update Profile</button>
-            </div>
+          <div className="card">
+            <h3>Edit Profile</h3>
+            <label style={labelStyle}>Name</label>
+            <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Name" />
+            <label style={labelStyle}>Hero Badge</label>
+            <input value={profileBadge} onChange={(e) => setProfileBadge(e.target.value)} placeholder="e.g. Civil Engineer" />
+            <label style={labelStyle}>Professional Title / Subtitle</label>
+            <input value={profileSubtitle} onChange={(e) => setProfileSubtitle(e.target.value)} placeholder="Title" />
+            <label style={labelStyle}>Bio</label>
+            <textarea value={profileBio} onChange={(e) => setProfileBio(e.target.value)} placeholder="Bio" style={{ minHeight: '150px' }} />
+            <label style={labelStyle}>Profile Image URL</label>
+            <input value={profileImage} onChange={(e) => setProfileImage(e.target.value)} placeholder="https://..." />
+            <label style={labelStyle}>Education (short)</label>
+            <input value={profileEducation} onChange={(e) => setProfileEducation(e.target.value)} placeholder="Education" />
+            <label style={labelStyle}>Current Role</label>
+            <input value={profileCurrentRole} onChange={(e) => setProfileCurrentRole(e.target.value)} placeholder="Current role" />
+            <label style={labelStyle}>Email</label>
+            <input value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="email@example.com" />
+            <label style={labelStyle}>Phone</label>
+            <input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+977-XXXXXXXXXX" />
+            <label style={labelStyle}>Contact Headline</label>
+            <textarea value={contactHeadline} onChange={(e) => setContactHeadline(e.target.value)} placeholder="Available for new opportunities..." style={{ minHeight: '90px' }} />
+            <label style={labelStyle}>LinkedIn URL</label>
+            <input value={profileLinkedIn} onChange={(e) => setProfileLinkedIn(e.target.value)} placeholder="https://www.linkedin.com/in/..." />
+            <label style={labelStyle}>LinkedIn Label</label>
+            <input value={contactLinkedInLabel} onChange={(e) => setContactLinkedInLabel(e.target.value)} placeholder="Nayan Kuikel" />
+            <label style={labelStyle}>Skills (comma separated — shown in About & Skills chips)</label>
+            <input value={profileSkills} onChange={(e) => setProfileSkills(e.target.value)} placeholder="Skill 1, Skill 2, Skill 3" />
+            <hr style={{ borderColor: 'hsl(var(--border))', margin: '20px 0 12px' }} />
+            <p style={{ fontSize: '11px', color: 'hsl(var(--muted-foreground))', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '4px' }}>Stat Cards</p>
+            <label style={labelStyle}>First Job Year <span style={{ opacity: 0.5 }}>(auto-calculates Years Experience)</span></label>
+            <input type="number" value={profileFirstJobYear} onChange={(e) => setProfileFirstJobYear(e.target.value)} placeholder="e.g. 2016" min="1980" max={new Date().getFullYear()} />
+            {previewYears !== null && <p style={{ fontSize: '11px', color: 'hsl(var(--primary))', marginTop: '4px' }}>→ Will show: <b>{previewYears}+ Years Experience</b></p>}
+            <label style={labelStyle}>Projects Delivered</label>
+            <input type="number" value={profileProjectCount} onChange={(e) => setProfileProjectCount(e.target.value)} placeholder="e.g. 40" min="0" />
+            <label style={labelStyle}>Teams Led</label>
+            <input type="number" value={profileTeamsLed} onChange={(e) => setProfileTeamsLed(e.target.value)} placeholder="e.g. 12" min="0" />
+            <label style={labelStyle}>Location</label>
+            <input value={profileLocation} onChange={(e) => setProfileLocation(e.target.value)} placeholder="e.g. Kathmandu, Nepal" />
+            <button className="save" onClick={updateProfile}>Update Profile</button>
           </div>
+        )}
+
+        {/* ── SKILLS ────────────────────────────────────────── */}
+        {activeTab === 'skills' && (
+          <>
+            <div className="card">
+              <h3>Skill Categories</h3>
+              <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))', marginBottom: '12px' }}>
+                Add categories and their skills with proficiency levels (shown as progress bars on the site).
+              </p>
+
+              {/* Add new category */}
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                <input
+                  value={newCatLabel}
+                  onChange={(e) => setNewCatLabel(e.target.value)}
+                  placeholder="New category name (e.g. Structural Design)"
+                  style={{ flex: 1 }}
+                />
+                <button className="save" style={{ marginTop: 0 }} onClick={addCategory}>Add Category</button>
+              </div>
+
+              {skillCategories.length === 0 && (
+                <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '13px' }}>
+                  No custom skill categories yet. Add one above, or the site will use default skills.
+                </p>
+              )}
+
+              {skillCategories.map((cat, catIdx) => (
+                <div key={catIdx} style={{ border: '1px solid hsl(var(--border))', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <b style={{ fontSize: '15px' }}>{cat.label}</b>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button className="save alt" onClick={() => setEditingCatIdx(editingCatIdx === catIdx ? null : catIdx)}>
+                        {editingCatIdx === catIdx ? 'Close' : 'Edit Skills'}
+                      </button>
+                      <button className="save alt" style={{ background: '#5a2222' }} onClick={() => removeCategory(catIdx)}>Remove</button>
+                    </div>
+                  </div>
+
+                  {/* Skills list */}
+                  {cat.skills.map((skill, skillIdx) => (
+                    <div key={skillIdx} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                      <span style={{ flex: 1, fontSize: '13px', fontWeight: 600 }}>{skill.name}</span>
+                      {editingCatIdx === catIdx ? (
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={skill.level}
+                          onChange={(e) => updateSkillLevel(catIdx, skillIdx, parseInt(e.target.value))}
+                          style={{ width: '120px' }}
+                        />
+                      ) : null}
+                      <span style={{ fontSize: '12px', color: 'hsl(var(--primary))', minWidth: '36px', fontWeight: 700 }}>{skill.level}%</span>
+                      {editingCatIdx === catIdx && (
+                        <button onClick={() => removeSkill(catIdx, skillIdx)} style={{ background: 'transparent', border: '1px solid #ff4444', color: '#ff4444', padding: '2px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '11px' }}>✕</button>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Add skill to this category */}
+                  {editingCatIdx === catIdx && (
+                    <div style={{ marginTop: '12px', padding: '12px', background: 'hsl(var(--background))', borderRadius: '8px' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px', color: 'hsl(var(--muted-foreground))' }}>Add Skill</p>
+                      <input
+                        value={newSkillName}
+                        onChange={(e) => setNewSkillName(e.target.value)}
+                        placeholder="Skill name"
+                        style={{ marginTop: 0 }}
+                      />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px' }}>
+                        <label style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))' }}>Level: {newSkillLevel}%</label>
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={newSkillLevel}
+                          onChange={(e) => setNewSkillLevel(parseInt(e.target.value))}
+                          style={{ flex: 1 }}
+                        />
+                      </div>
+                      <button className="save" style={{ marginTop: '10px' }} onClick={() => addSkillToCategory(catIdx)}>Add Skill</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              <button className="save" onClick={saveSkillCategories} style={{ marginTop: '10px' }}>
+                💾 Save All Skills to Site
+              </button>
+            </div>
+          </>
         )}
 
         {/* ── EDUCATION ─────────────────────────────────────── */}
         {activeTab === 'education' && (
-          <div className="section active">
+          <>
             <div className="card">
               <h3>{editingEducationId ? 'Edit Education' : 'Add Education'}</h3>
               <input value={eduDegree} onChange={(e) => setEduDegree(e.target.value)} placeholder="Degree / Program" />
@@ -501,10 +593,10 @@ export default function Admin() {
             <div className="card">
               <h3>Education List</h3>
               {education.map((item: any) => (
-                <div key={item.id} style={{ borderBottom: '1px solid #333', padding: '10px 0', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                <div key={item.id} style={{ borderBottom: '1px solid hsl(var(--border))', padding: '10px 0', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
                   <div>
                     <p><b>{item.degree}</b> at {item.institution}</p>
-                    <p style={{ fontSize: '12px', color: '#aaa' }}>{item.period}</p>
+                    <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))' }}>{item.period}</p>
                   </div>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button className="save alt" onClick={() => startEditEducation(item)}>Edit</button>
@@ -513,12 +605,12 @@ export default function Admin() {
                 </div>
               ))}
             </div>
-          </div>
+          </>
         )}
 
         {/* ── EXPERIENCE ────────────────────────────────────── */}
         {activeTab === 'experience' && (
-          <div className="section active">
+          <>
             <div className="card">
               <h3>{editingExperienceId ? 'Edit Job Experience' : 'Add Job Experience'}</h3>
               <input value={expRole} onChange={(e) => setExpRole(e.target.value)} placeholder="Role" />
@@ -533,10 +625,10 @@ export default function Admin() {
             <div className="card">
               <h3>Job Experience List</h3>
               {experience.map((item: any) => (
-                <div key={item.id} style={{ borderBottom: '1px solid #333', padding: '10px 0', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                <div key={item.id} style={{ borderBottom: '1px solid hsl(var(--border))', padding: '10px 0', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
                   <div>
                     <p><b>{item.role}</b> at {item.company}</p>
-                    <p style={{ fontSize: '12px', color: '#aaa' }}>{item.period}</p>
+                    <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))' }}>{item.period}</p>
                   </div>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button className="save alt" onClick={() => startEditExperience(item)}>Edit</button>
@@ -545,16 +637,16 @@ export default function Admin() {
                 </div>
               ))}
             </div>
-          </div>
+          </>
         )}
 
         {/* ── GALLERY ───────────────────────────────────────── */}
         {activeTab === 'gallery' && (
-          <div className="section active">
+          <>
             <div className="card">
               <h3>Add Visual Portfolio Item</h3>
               <input value={galleryUrl} onChange={(e) => setGalleryUrl(e.target.value)} placeholder="Image URL" />
-              {galleryUrl && <img src={sanitizeImageUrl(galleryUrl)} alt="Preview" style={{ width: '100%', maxHeight: '220px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #333', marginTop: '10px' }} />}
+              {galleryUrl && <img src={sanitizeImageUrl(galleryUrl)} alt="Preview" style={{ width: '100%', maxHeight: '220px', objectFit: 'cover', borderRadius: '10px', marginTop: '10px' }} />}
               <input type="file" accept="image/*" onChange={(e) => setGalleryImageFile(e.target.files?.[0] || null)} />
               <button className="save alt" onClick={uploadGalleryImage} disabled={galleryUploading}>{galleryUploading ? 'Uploading...' : 'Upload Image'}</button>
               <select value={gallerySpan} onChange={(e) => setGallerySpan(e.target.value)}>
@@ -568,39 +660,37 @@ export default function Admin() {
             <div className="card">
               <h3>Visual Portfolio List</h3>
               {gallery.map((item: any) => (
-                <div key={item.id} style={{ borderBottom: '1px solid #333', padding: '10px 0', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                <div key={item.id} style={{ borderBottom: '1px solid hsl(var(--border))', padding: '10px 0', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <img src={sanitizeImageUrl(item.url)} alt="Visual" style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #333' }} />
-                    <div>
-                      <p style={{ fontSize: '13px' }}>{item.url}</p>
-                      <p style={{ fontSize: '11px', color: '#888' }}>{item.span || 'col-span-1 row-span-1'}</p>
-                    </div>
+                    <img src={sanitizeImageUrl(item.url)} alt="Visual" style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px' }} />
+                    <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))' }}>{item.span || 'col-span-1 row-span-1'}</p>
                   </div>
                   <button className="save alt" style={{ background: '#5a2222' }} onClick={() => removeGalleryItem(item.id)}>Delete</button>
                 </div>
               ))}
             </div>
-          </div>
+          </>
         )}
 
         {/* ── THEME ─────────────────────────────────────────── */}
         {activeTab === 'theme' && (
-          <div className="section active">
+          <>
             <div className="card">
-              <h3>Theme Control</h3>
-              <p style={{ marginBottom: '15px' }}>
-                Current Mode: <b style={{ textTransform: 'uppercase' }}>{mode}</b> | Theme: <b style={{ textTransform: 'uppercase' }}>{themeSet}</b>
+              <h3>Mode Control</h3>
+              <p style={{ marginBottom: '15px', fontSize: '13px' }}>
+                Current: <b style={{ textTransform: 'uppercase', color: 'hsl(var(--primary))' }}>{mode}</b> mode · <b style={{ textTransform: 'uppercase' }}>{themeSet}</b> theme
               </p>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <button className="save alt" onClick={() => applyMode('light')}>Light</button>
-                <button className="save alt" onClick={() => applyMode('dark')}>Dark</button>
-                <button className="save alt" onClick={() => applyMode('brown')}>Brown</button>
-                <button className="save" onClick={toggleTheme}>Toggle Mode</button>
+                <button className="save alt" onClick={() => applyMode('light')}>☀ Light</button>
+                <button className="save alt" onClick={() => applyMode('dark')}>🌙 Dark</button>
+                <button className="save alt" onClick={() => applyMode('brown')}>☕ Brown</button>
+                <button className="save" onClick={toggleTheme}>Cycle Mode</button>
               </div>
             </div>
             <div className="card">
-              <h3>Theme Sets (All 6)</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+              <h3>Theme Sets</h3>
+              <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))', marginBottom: '14px' }}>Each theme has unique colors, radius, and visual personality.</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
                 {(['architectural', 'concrete', 'luxury', 'nordic', 'precision', 'blueprint'] as ThemeSet[]).map((theme) => (
                   <button key={theme} className={`theme-chip ${themeSet === theme ? 'active' : ''}`} onClick={() => applyThemeSet(theme)}>
                     {theme}
@@ -608,24 +698,87 @@ export default function Admin() {
                 ))}
               </div>
             </div>
-          </div>
+          </>
         )}
 
         {/* ── MESSAGES ──────────────────────────────────────── */}
         {activeTab === 'messages' && (
-          <div className="section active">
+          <div className="card">
+            <h3>Messages Log</h3>
+            {messages.map((m: any) => (
+              <div key={m.id} style={{ borderBottom: '1px solid hsl(var(--border))', padding: '15px 0', position: 'relative' }}>
+                <p><b>From: {m.name}</b> ({m.email})</p>
+                <p style={{ margin: '8px 0', fontSize: '14px', color: 'hsl(var(--muted-foreground))' }}>{m.message}</p>
+                <button onClick={() => deleteMessage(m.id)} style={{ position: 'absolute', top: '15px', right: '0', background: 'transparent', border: '1px solid #ff4444', color: '#ff4444', padding: '2px 8px', cursor: 'pointer', fontSize: '10px', borderRadius: '4px' }}>Delete</button>
+              </div>
+            ))}
+            {messages.length === 0 && <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '13px' }}>No messages yet.</p>}
+          </div>
+        )}
+
+        {/* ── ADMINS ────────────────────────────────────────── */}
+        {activeTab === 'admins' && (
+          <>
             <div className="card">
-              <h3>Messages Log</h3>
-              {messages.map((m: any) => (
-                <div key={m.id} style={{ borderBottom: '1px solid #333', padding: '15px 0', position: 'relative' }}>
-                  <p><b>From: {m.name}</b> ({m.email})</p>
-                  <p style={{ margin: '10px 0', fontSize: '14px' }}>{m.message}</p>
-                  <button onClick={() => deleteMessage(m.id)} style={{ position: 'absolute', top: '15px', right: '0', background: 'transparent', border: '1px solid #ff4444', color: '#ff4444', padding: '2px 8px', cursor: 'pointer', fontSize: '10px' }}>Delete</button>
+              <h3>Grant Admin Access</h3>
+              <p style={{ fontSize: '12px', color: 'hsl(var(--muted-foreground))', marginBottom: '12px' }}>
+                The user must have logged in at least once before you can grant them admin access.
+              </p>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input
+                  value={newAdminEmail}
+                  onChange={(e) => setNewAdminEmail(e.target.value)}
+                  placeholder="user@email.com"
+                  style={{ flex: 1 }}
+                />
+                <button className="save" style={{ marginTop: 0 }} onClick={grantAdmin}>Grant Admin</button>
+              </div>
+            </div>
+
+            <div className="card">
+              <h3>All Users</h3>
+              {adminLoading && <p style={{ color: 'hsl(var(--muted-foreground))' }}>Loading...</p>}
+              {!adminLoading && adminUsers.length === 0 && (
+                <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '13px' }}>No users found.</p>
+              )}
+              {adminUsers.map((u) => (
+                <div key={u.id} style={{ borderBottom: '1px solid hsl(var(--border))', padding: '14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <b style={{ fontSize: '14px' }}>{u.email}</b>
+                      {u.role === 'admin' && (
+                        <span style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', fontSize: '9px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                          Admin
+                        </span>
+                      )}
+                      {u.id === currentUser?.uid && (
+                        <span style={{ fontSize: '9px', color: 'hsl(var(--muted-foreground))', fontWeight: 600, textTransform: 'uppercase' }}>
+                          (You)
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: '11px', color: 'hsl(var(--muted-foreground))', marginTop: '2px' }}>Role: {u.role || 'user'}</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {u.role !== 'admin' ? (
+                      <button className="save alt" onClick={async () => {
+                        await updateDoc(doc(db, 'users', u.id), { role: 'admin' });
+                      }}>Grant Admin</button>
+                    ) : (
+                      <button
+                        className="save alt"
+                        style={{ background: u.id === currentUser?.uid ? '#333' : '#5a2222', cursor: u.id === currentUser?.uid ? 'not-allowed' : 'pointer' }}
+                        onClick={() => revokeAdmin(u.id, u.email)}
+                        disabled={u.id === currentUser?.uid}
+                      >
+                        Revoke Admin
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
-              {messages.length === 0 && <p style={{ color: '#666', fontSize: '13px' }}>No messages yet.</p>}
             </div>
-          </div>
+          </>
         )}
 
       </div>
@@ -633,10 +786,10 @@ export default function Admin() {
   );
 }
 
-// ── Shared label style ───────────────────────────────────────
 const labelStyle: React.CSSProperties = {
   fontSize: '12px',
-  color: '#aaa',
+  color: 'hsl(var(--muted-foreground))',
   marginTop: '10px',
   display: 'block',
+  fontWeight: 600,
 };

@@ -1,13 +1,18 @@
 import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
-import { GraduationCap, Briefcase, Award, MapPin, Calendar, Users } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { GraduationCap, Briefcase, Award, MapPin, Calendar, Users, ChevronDown, ChevronUp } from 'lucide-react';
+
+const BIO_LIMIT = 220;
 
 export default function About({ data }: { data: any }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-60px' });
-  const bio = data?.bio || '';
+  const [bioExpanded, setBioExpanded] = useState(false);
 
-  // ── Derived / stored stats ─────────────────────────────────
+  const bio: string = data?.bio || '';
+  const isBioLong = bio.length > BIO_LIMIT;
+  const displayBio = bioExpanded || !isBioLong ? bio : bio.slice(0, BIO_LIMIT) + '…';
+
   const currentYear = new Date().getFullYear();
   const firstJobYear = data?.firstJobYear ? parseInt(data.firstJobYear) : null;
   const yearsExperience = firstJobYear
@@ -70,9 +75,21 @@ export default function About({ data }: { data: any }) {
             <h2 className="text-5xl font-black tracking-tighter mb-4 leading-none uppercase">
               Engineering <br /> <span className="text-primary">with Purpose</span>
             </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed font-medium line-clamp-4">
-              {bio || 'Add your bio from the admin panel.'}
+            <p className="text-lg text-muted-foreground leading-relaxed font-medium">
+              {bio ? displayBio : 'Add your bio from the admin panel.'}
             </p>
+            {isBioLong && bio && (
+              <button
+                onClick={() => setBioExpanded(!bioExpanded)}
+                className="mt-3 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary hover:opacity-70 transition-opacity"
+              >
+                {bioExpanded ? (
+                  <><ChevronUp size={12} /> Read Less</>
+                ) : (
+                  <><ChevronDown size={12} /> Read More</>
+                )}
+              </button>
+            )}
           </div>
 
           <div className="grid gap-4">
@@ -89,7 +106,7 @@ export default function About({ data }: { data: any }) {
         </motion.div>
       </div>
 
-      {/* Stat Cards — only renders when data exists */}
+      {/* Stat Cards */}
       {statCards.length > 0 && (
         <div
           className={`grid gap-4 ${

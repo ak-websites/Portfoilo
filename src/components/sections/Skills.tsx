@@ -1,11 +1,11 @@
 import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import {
-  Code2, Database, Layers, Cpu, Globe, Hammer,
-  BarChart3, Cloud, GitBranch, Figma, Terminal, Wrench
+  Layers, BarChart3, Hammer, Terminal
 } from 'lucide-react';
 
-const SKILL_CATEGORIES = [
+// Fallback static data
+const DEFAULT_SKILL_CATEGORIES = [
   {
     label: 'Structural Design',
     icon: <Layers size={22} />,
@@ -44,23 +44,36 @@ const SKILL_CATEGORIES = [
   },
 ];
 
-const QUICK_SKILLS = [
+const DEFAULT_QUICK_SKILLS = [
   'Structural Analysis', 'BIM Modeling', 'Contract Management',
   'Concrete Design', 'Hydraulic Engineering', 'Road Design',
   'Environmental Impact', 'Steel Detailing', 'Foundation Engineering',
   'Drainage Systems', 'Seismic Design', 'Construction Law',
 ];
 
+const ICON_MAP: Record<string, React.ReactNode> = {
+  'Structural Design': <Layers size={22} />,
+  'Project Management': <BarChart3 size={22} />,
+  'Site & Field': <Hammer size={22} />,
+  'Software & Tools': <Terminal size={22} />,
+};
+
 export default function Skills({ data }: { data: any }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-60px' });
 
-  // If about data has skills array, use those for quick chips
-  const chips = data?.skills?.length > 0 ? data.skills : QUICK_SKILLS;
+  // Use admin-provided skill categories if available, else defaults
+  const skillCategories = data?.skillCategories?.length > 0
+    ? data.skillCategories.map((cat: any) => ({
+        ...cat,
+        icon: ICON_MAP[cat.label] || <Layers size={22} />,
+      }))
+    : DEFAULT_SKILL_CATEGORIES;
+
+  const chips: string[] = data?.skills?.length > 0 ? data.skills : DEFAULT_QUICK_SKILLS;
 
   return (
     <section id="skills" className="py-24" ref={ref}>
-      {/* Heading */}
       <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
         <div>
           <h2 className="text-6xl md:text-8xl font-black tracking-tighter leading-none uppercase">
@@ -72,9 +85,8 @@ export default function Skills({ data }: { data: any }) {
         </p>
       </div>
 
-      {/* Skill Category Cards with Progress Bars */}
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-14">
-        {SKILL_CATEGORIES.map((cat, catIdx) => (
+        {skillCategories.map((cat: any, catIdx: number) => (
           <motion.div
             key={cat.label}
             initial={{ opacity: 0, y: 32 }}
@@ -82,17 +94,14 @@ export default function Skills({ data }: { data: any }) {
             transition={{ duration: 0.6, delay: catIdx * 0.1, ease: 'easeOut' }}
             className="glass p-8 rounded-[2rem] border border-transparent hover:border-primary/20 transition-all duration-500 group"
           >
-            {/* Card Header */}
             <div className="flex items-center gap-4 mb-8">
               <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
                 {cat.icon}
               </div>
               <h3 className="font-black text-sm uppercase tracking-widest leading-tight">{cat.label}</h3>
             </div>
-
-            {/* Progress Bars */}
             <div className="space-y-5">
-              {cat.skills.map((skill, skillIdx) => (
+              {cat.skills.map((skill: any, skillIdx: number) => (
                 <SkillBar
                   key={skill.name}
                   name={skill.name}
@@ -106,30 +115,31 @@ export default function Skills({ data }: { data: any }) {
         ))}
       </div>
 
-      {/* Quick Skill Chips */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={isInView ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.6, delay: 0.5 }}
-        className="glass p-10 rounded-[2rem]"
-      >
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-50 mb-6">
-          Additional Competencies
-        </p>
-        <div className="flex flex-wrap gap-3">
-          {chips.map((skill: string, i: number) => (
-            <motion.span
-              key={skill}
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={isInView ? { opacity: 1, scale: 1 } : {}}
-              transition={{ delay: 0.5 + i * 0.04, duration: 0.3 }}
-              className="px-5 py-2 bg-primary/8 border border-primary/15 text-primary rounded-full text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all cursor-default"
-            >
-              {skill}
-            </motion.span>
-          ))}
-        </div>
-      </motion.div>
+      {chips.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="glass p-10 rounded-[2rem]"
+        >
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-50 mb-6">
+            Additional Competencies
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {chips.map((skill: string, i: number) => (
+              <motion.span
+                key={skill}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={isInView ? { opacity: 1, scale: 1 } : {}}
+                transition={{ delay: 0.5 + i * 0.04, duration: 0.3 }}
+                className="px-5 py-2 bg-primary/8 border border-primary/15 text-primary rounded-full text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all cursor-default"
+              >
+                {skill}
+              </motion.span>
+            ))}
+          </div>
+        </motion.div>
+      )}
     </section>
   );
 }

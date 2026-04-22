@@ -1,4 +1,5 @@
-import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
+import { motion, useScroll, useSpring, useTransform, useInView } from 'framer-motion';
+import { useRef } from 'react';
 import { useContent } from '../store/useContent';
 import Hero from '../components/sections/Hero';
 import About from '../components/sections/About';
@@ -7,6 +8,7 @@ import Experience from '../components/sections/Experience';
 import Projects from '../components/sections/Projects';
 import Contact from '../components/sections/Contact';
 import Gallery from '../components/sections/Gallery';
+import Skills from '../components/sections/Skills';
 
 export default function Home() {
   const { hero, about, education, experience, projects, gallery, contact } = useContent();
@@ -18,8 +20,10 @@ export default function Home() {
   });
   const blobYOne = useTransform(scrollYProgress, [0, 1], [0, -120]);
   const blobYTwo = useTransform(scrollYProgress, [0, 1], [0, 140]);
+
   const sections = [
     { id: 'about', node: <About data={about} /> },
+    { id: 'skills', node: <Skills data={about} /> },
     { id: 'education', node: <Education data={education} /> },
     { id: 'experience', node: <Experience data={experience} /> },
     { id: 'projects', node: <Projects data={projects} /> },
@@ -46,19 +50,29 @@ export default function Home() {
       <Hero data={hero} />
       <div className="container mx-auto px-4 md:px-8 py-24 relative z-10">
         {sections.map((section, index) => (
-          <motion.div
-            key={section.id}
-            initial={{ opacity: 0, y: 36 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.15 }}
-            transition={{ duration: 0.65, ease: 'easeOut', delay: index * 0.04 }}
-            className={index === 0 ? '' : 'section-shell'}
-          >
+          <FadeInSection key={section.id} index={index}>
             {index > 0 && <div className="section-divider" />}
             {section.node}
-          </motion.div>
+          </FadeInSection>
         ))}
       </div>
     </div>
+  );
+}
+
+function FadeInSection({ children, index }: { children: React.ReactNode; index: number }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-80px' });
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 48 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 48 }}
+      transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.05 }}
+      className={index === 0 ? '' : 'section-shell'}
+    >
+      {children}
+    </motion.div>
   );
 }

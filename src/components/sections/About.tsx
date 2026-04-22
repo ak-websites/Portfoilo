@@ -2,17 +2,36 @@ import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import { GraduationCap, Briefcase, Award, MapPin, Calendar, Users } from 'lucide-react';
 
-const STAT_CARDS = [
-  { icon: <Calendar size={20} />, value: '8+', label: 'Years Experience' },
-  { icon: <Briefcase size={20} />, value: '40+', label: 'Projects Delivered' },
-  { icon: <Users size={20} />, value: '12+', label: 'Teams Led' },
-  { icon: <MapPin size={20} />, value: 'Nepal', label: 'Based In' },
-];
-
 export default function About({ data }: { data: any }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-60px' });
   const bio = data?.bio || '';
+
+  // ── Derived / stored stats ─────────────────────────────────
+  const currentYear = new Date().getFullYear();
+  const firstJobYear = data?.firstJobYear ? parseInt(data.firstJobYear) : null;
+  const yearsExperience = firstJobYear
+    ? currentYear - firstJobYear
+    : data?.yearsExperience ?? null;
+
+  const projectCount = data?.projectCount ?? null;
+  const teamsLed = data?.teamsLed ?? null;
+  const location = data?.location || null;
+
+  const statCards = [
+    (firstJobYear !== null || yearsExperience !== null)
+      ? { icon: <Calendar size={20} />, value: `${yearsExperience}+`, label: 'Years Experience' }
+      : null,
+    projectCount !== null
+      ? { icon: <Briefcase size={20} />, value: `${projectCount}+`, label: 'Projects Delivered' }
+      : null,
+    teamsLed !== null
+      ? { icon: <Users size={20} />, value: `${teamsLed}+`, label: 'Teams Led' }
+      : null,
+    location
+      ? { icon: <MapPin size={20} />, value: location, label: 'Based In' }
+      : null,
+  ].filter(Boolean);
 
   return (
     <section id="about" className="py-24" ref={ref}>
@@ -40,7 +59,7 @@ export default function About({ data }: { data: any }) {
           <div className="absolute -inset-4 bg-primary/20 rounded-[3.5rem] -z-10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
         </motion.div>
 
-        {/* Bio */}
+        {/* Bio + Key Metrics */}
         <motion.div
           initial={{ opacity: 0, x: 40 }}
           animate={isInView ? { opacity: 1, x: 0 } : {}}
@@ -51,39 +70,53 @@ export default function About({ data }: { data: any }) {
             <h2 className="text-5xl font-black tracking-tighter mb-4 leading-none uppercase">
               Engineering <br /> <span className="text-primary">with Purpose</span>
             </h2>
-            {/* Short bio — max 2 sentences shown cleanly */}
             <p className="text-lg text-muted-foreground leading-relaxed font-medium line-clamp-4">
-              {bio || 'Civil engineer with a passion for precision, sustainability, and delivering infrastructure that stands the test of time.'}
+              {bio || 'Add your bio from the admin panel.'}
             </p>
           </div>
 
-          {/* 3 key metrics — compact */}
           <div className="grid gap-4">
-            <Metric icon={<GraduationCap className="text-primary" />} label="Education" value={data?.education || '—'} />
-            <Metric icon={<Briefcase className="text-primary" />} label="Current Role" value={data?.currentRole || '—'} />
-            <Metric icon={<Award className="text-primary" />} label="Expertise" value={data?.skills?.slice(0, 3).join(', ') || '—'} />
+            {data?.education && (
+              <Metric icon={<GraduationCap className="text-primary" />} label="Education" value={data.education} />
+            )}
+            {data?.currentRole && (
+              <Metric icon={<Briefcase className="text-primary" />} label="Current Role" value={data.currentRole} />
+            )}
+            {data?.skills?.length > 0 && (
+              <Metric icon={<Award className="text-primary" />} label="Expertise" value={data.skills.slice(0, 3).join(', ')} />
+            )}
           </div>
         </motion.div>
       </div>
 
-      {/* Stat Cards Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {STAT_CARDS.map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 24 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.5, delay: 0.3 + i * 0.08 }}
-            className="glass p-8 rounded-[1.5rem] text-center group hover:border-primary/20 border-2 border-transparent transition-all"
-          >
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-              {stat.icon}
-            </div>
-            <p className="text-3xl font-black tracking-tighter">{stat.value}</p>
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mt-1">{stat.label}</p>
-          </motion.div>
-        ))}
-      </div>
+      {/* Stat Cards — only renders when data exists */}
+      {statCards.length > 0 && (
+        <div
+          className={`grid gap-4 ${
+            statCards.length === 4
+              ? 'grid-cols-2 md:grid-cols-4'
+              : statCards.length === 3
+              ? 'grid-cols-1 sm:grid-cols-3'
+              : 'grid-cols-2'
+          }`}
+        >
+          {statCards.map((stat: any, i: number) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 24 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 0.3 + i * 0.08 }}
+              className="glass p-8 rounded-[1.5rem] text-center group hover:border-primary/20 border-2 border-transparent transition-all"
+            >
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                {stat.icon}
+              </div>
+              <p className="text-3xl font-black tracking-tighter">{stat.value}</p>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mt-1">{stat.label}</p>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

@@ -36,6 +36,7 @@ export default function Admin() {
   const [projUploading, setProjUploading] = useState(false);
   const [projLink, setProjLink] = useState('');
 
+  // Profile / Hero fields
   const [profileName, setProfileName] = useState(hero?.title || '');
   const [profileBadge, setProfileBadge] = useState(hero?.badge || '');
   const [profileSubtitle, setProfileSubtitle] = useState(hero?.subtitle || '');
@@ -44,35 +45,55 @@ export default function Admin() {
   const [profileEducation, setProfileEducation] = useState(about?.education || '');
   const [profileCurrentRole, setProfileCurrentRole] = useState(about?.currentRole || '');
   const [profileLinkedIn, setProfileLinkedIn] = useState(about?.linkedin || '');
+  const [profileSkills, setProfileSkills] = useState('');
+
+  // Contact fields
   const [contactHeadline, setContactHeadline] = useState(contact?.headline || '');
   const [contactLinkedInLabel, setContactLinkedInLabel] = useState(contact?.linkedinLabel || '');
   const [contactEmail, setContactEmail] = useState(contact?.email || '');
   const [contactPhone, setContactPhone] = useState(contact?.phone || '');
-  const [profileSkills, setProfileSkills] = useState('');
 
+  // ── NEW: Dynamic Stat Card fields ──────────────────────────
+  const [profileFirstJobYear, setProfileFirstJobYear] = useState('');
+  const [profileProjectCount, setProfileProjectCount] = useState('');
+  const [profileTeamsLed, setProfileTeamsLed] = useState('');
+  const [profileLocation, setProfileLocation] = useState('');
+
+  // Experience fields
   const [expRole, setExpRole] = useState('');
   const [expCompany, setExpCompany] = useState('');
   const [expPeriod, setExpPeriod] = useState('');
   const [expDescription, setExpDescription] = useState('');
 
+  // Education fields
   const [eduDegree, setEduDegree] = useState('');
   const [eduInstitution, setEduInstitution] = useState('');
   const [eduPeriod, setEduPeriod] = useState('');
   const [eduDescription, setEduDescription] = useState('');
+
+  // Gallery fields
   const [galleryUrl, setGalleryUrl] = useState('');
   const [gallerySpan, setGallerySpan] = useState('col-span-1 row-span-1');
   const [galleryImageFile, setGalleryImageFile] = useState<File | null>(null);
   const [galleryUploading, setGalleryUploading] = useState(false);
 
   useEffect(() => {
-    if (hero) setProfileName(hero.title || '');
-    if (hero) setProfileSubtitle(hero.subtitle || '');
+    if (hero) {
+      setProfileName(hero.title || '');
+      setProfileSubtitle(hero.subtitle || '');
+      setProfileBadge(hero.badge || '');
+    }
     if (about) {
       setProfileBio(about.bio || '');
       setProfileImage(about.image || '');
       setProfileEducation(about.education || '');
       setProfileCurrentRole(about.currentRole || '');
       setProfileSkills(Array.isArray(about.skills) ? about.skills.join(', ') : '');
+      // Stat card fields
+      setProfileFirstJobYear(about.firstJobYear?.toString() || '');
+      setProfileProjectCount(about.projectCount?.toString() || '');
+      setProfileTeamsLed(about.teamsLed?.toString() || '');
+      setProfileLocation(about.location || '');
     }
     if (contact) {
       setContactHeadline(contact.headline || '');
@@ -93,34 +114,22 @@ export default function Admin() {
     navigate('/login');
   };
 
+  // ── Project CRUD ────────────────────────────────────────────
   const saveProject = async () => {
     if (!projTitle || !projDesc || !projCategory) return alert('Fill all required fields');
     const safeProjectImage = sanitizeImageUrl(projImage, '');
     const safeProjectLink = sanitizeUrl(projLink, '#');
     try {
-      const payload = {
-        title: projTitle,
-        description: projDesc,
-        category: projCategory,
-        image: safeProjectImage,
-        link: safeProjectLink,
-      };
-
+      const payload = { title: projTitle, description: projDesc, category: projCategory, image: safeProjectImage, link: safeProjectLink };
       if (editingProjectId) {
         await updateDoc(doc(db, 'projects', editingProjectId), payload);
         alert('Project updated!');
       } else {
-        await addDoc(collection(db, 'projects'), {
-          ...payload,
-          order: projects.length,
-          createdAt: new Date(),
-        });
+        await addDoc(collection(db, 'projects'), { ...payload, order: projects.length, createdAt: new Date() });
         alert('Project added!');
       }
       resetProjectForm();
-    } catch {
-      alert('Error saving project');
-    }
+    } catch { alert('Error saving project'); }
   };
 
   const uploadProjectImage = async () => {
@@ -129,33 +138,21 @@ export default function Admin() {
       setProjUploading(true);
       const imageRef = ref(storage, `projects/${Date.now()}-${projImageFile.name}`);
       await uploadBytes(imageRef, projImageFile);
-      const url = await getDownloadURL(imageRef);
-      setProjImage(url);
-      alert('Project image uploaded and filled!');
-    } catch {
-      alert('Error uploading project image');
-    } finally {
-      setProjUploading(false);
-    }
+      setProjImage(await getDownloadURL(imageRef));
+      alert('Project image uploaded!');
+    } catch { alert('Error uploading project image'); }
+    finally { setProjUploading(false); }
   };
 
   const resetProjectForm = () => {
-    setEditingProjectId(null);
-    setProjTitle('');
-    setProjDesc('');
-    setProjCategory('');
-    setProjImage('');
-    setProjImageFile(null);
-    setProjLink('');
+    setEditingProjectId(null); setProjTitle(''); setProjDesc('');
+    setProjCategory(''); setProjImage(''); setProjImageFile(null); setProjLink('');
   };
 
   const startEditProject = (project: any) => {
-    setEditingProjectId(project.id);
-    setProjTitle(project.title || '');
-    setProjDesc(project.description || '');
-    setProjCategory(project.category || '');
-    setProjImage(project.image || '');
-    setProjLink(project.link || '');
+    setEditingProjectId(project.id); setProjTitle(project.title || '');
+    setProjDesc(project.description || ''); setProjCategory(project.category || '');
+    setProjImage(project.image || ''); setProjLink(project.link || '');
     setActiveTab('projects');
   };
 
@@ -164,85 +161,62 @@ export default function Admin() {
     await deleteDoc(doc(db, 'projects', id));
   };
 
+  // ── Profile Save ─────────────────────────────────────────────
   const updateProfile = async () => {
     try {
-      const parsedSkills = profileSkills
-        .split(',')
-        .map((skill) => skill.trim())
-        .filter(Boolean);
+      const parsedSkills = profileSkills.split(',').map((s) => s.trim()).filter(Boolean);
 
-      await setDoc(
-        doc(db, 'content', 'hero'),
-        { title: profileName, badge: profileBadge, subtitle: profileSubtitle },
-        { merge: true }
-      );
-      await setDoc(
-        doc(db, 'content', 'about'),
-        {
-          bio: profileBio,
-          image: profileImage,
-          education: profileEducation,
-          currentRole: profileCurrentRole,
-          linkedin: profileLinkedIn,
-          skills: parsedSkills,
-        },
-        { merge: true }
-      );
-      await setDoc(
-        doc(db, 'content', 'contact'),
-        {
-          headline: contactHeadline,
-          email: contactEmail,
-          phone: contactPhone,
-          linkedin: profileLinkedIn,
-          linkedinLabel: contactLinkedInLabel,
-        },
-        { merge: true }
-      );
+      await setDoc(doc(db, 'content', 'hero'), {
+        title: profileName,
+        badge: profileBadge,
+        subtitle: profileSubtitle,
+      }, { merge: true });
+
+      await setDoc(doc(db, 'content', 'about'), {
+        bio: profileBio,
+        image: profileImage,
+        education: profileEducation,
+        currentRole: profileCurrentRole,
+        linkedin: profileLinkedIn,
+        skills: parsedSkills,
+        // ── Stat card fields ──────────────────────────────────
+        firstJobYear: profileFirstJobYear ? parseInt(profileFirstJobYear) : null,
+        // If admin left projectCount blank, we store null → About will hide the card
+        projectCount: profileProjectCount !== '' ? parseInt(profileProjectCount) : null,
+        teamsLed: profileTeamsLed !== '' ? parseInt(profileTeamsLed) : null,
+        location: profileLocation || null,
+      }, { merge: true });
+
+      await setDoc(doc(db, 'content', 'contact'), {
+        headline: contactHeadline,
+        email: contactEmail,
+        phone: contactPhone,
+        linkedin: profileLinkedIn,
+        linkedinLabel: contactLinkedInLabel,
+      }, { merge: true });
+
       alert('Profile updated!');
-    } catch {
-      alert('Error updating profile');
-    }
+    } catch { alert('Error updating profile'); }
   };
 
+  // ── Experience CRUD ──────────────────────────────────────────
   const saveExperience = async () => {
     if (!expRole || !expCompany) return alert('Fill fields');
     if (editingExperienceId) {
-      await updateDoc(doc(db, 'experience', editingExperienceId), {
-        role: expRole,
-        company: expCompany,
-        period: expPeriod,
-        description: expDescription || '',
-      });
+      await updateDoc(doc(db, 'experience', editingExperienceId), { role: expRole, company: expCompany, period: expPeriod, description: expDescription || '' });
       alert('Experience updated!');
     } else {
-      await addDoc(collection(db, 'experience'), {
-        role: expRole,
-        company: expCompany,
-        period: expPeriod,
-        description: expDescription || '',
-        order: experience.length,
-      });
+      await addDoc(collection(db, 'experience'), { role: expRole, company: expCompany, period: expPeriod, description: expDescription || '', order: experience.length });
       alert('Experience added!');
     }
     resetExperienceForm();
   };
 
-  const resetExperienceForm = () => {
-    setEditingExperienceId(null);
-    setExpRole('');
-    setExpCompany('');
-    setExpPeriod('');
-    setExpDescription('');
-  };
+  const resetExperienceForm = () => { setEditingExperienceId(null); setExpRole(''); setExpCompany(''); setExpPeriod(''); setExpDescription(''); };
 
   const startEditExperience = (item: any) => {
-    setEditingExperienceId(item.id);
-    setExpRole(item.role || '');
-    setExpCompany(item.company || '');
-    setExpPeriod(item.period || '');
-    setExpDescription(item.description || '');
-    setActiveTab('experience');
+    setEditingExperienceId(item.id); setExpRole(item.role || ''); setExpCompany(item.company || '');
+    setExpPeriod(item.period || ''); setExpDescription(item.description || ''); setActiveTab('experience');
   };
 
   const removeExperience = async (id: string) => {
@@ -250,44 +224,24 @@ export default function Admin() {
     await deleteDoc(doc(db, 'experience', id));
   };
 
+  // ── Education CRUD ───────────────────────────────────────────
   const saveEducation = async () => {
     if (!eduDegree || !eduInstitution) return alert('Fill fields');
     if (editingEducationId) {
-      await updateDoc(doc(db, 'education', editingEducationId), {
-        degree: eduDegree,
-        institution: eduInstitution,
-        period: eduPeriod,
-        description: eduDescription || '',
-      });
+      await updateDoc(doc(db, 'education', editingEducationId), { degree: eduDegree, institution: eduInstitution, period: eduPeriod, description: eduDescription || '' });
       alert('Education updated!');
     } else {
-      await addDoc(collection(db, 'education'), {
-        degree: eduDegree,
-        institution: eduInstitution,
-        period: eduPeriod,
-        description: eduDescription || '',
-        order: education.length,
-      });
+      await addDoc(collection(db, 'education'), { degree: eduDegree, institution: eduInstitution, period: eduPeriod, description: eduDescription || '', order: education.length });
       alert('Education added!');
     }
     resetEducationForm();
   };
 
-  const resetEducationForm = () => {
-    setEditingEducationId(null);
-    setEduDegree('');
-    setEduInstitution('');
-    setEduPeriod('');
-    setEduDescription('');
-  };
+  const resetEducationForm = () => { setEditingEducationId(null); setEduDegree(''); setEduInstitution(''); setEduPeriod(''); setEduDescription(''); };
 
   const startEditEducation = (item: any) => {
-    setEditingEducationId(item.id);
-    setEduDegree(item.degree || '');
-    setEduInstitution(item.institution || '');
-    setEduPeriod(item.period || '');
-    setEduDescription(item.description || '');
-    setActiveTab('education');
+    setEditingEducationId(item.id); setEduDegree(item.degree || ''); setEduInstitution(item.institution || '');
+    setEduPeriod(item.period || ''); setEduDescription(item.description || ''); setActiveTab('education');
   };
 
   const removeEducation = async (id: string) => {
@@ -295,18 +249,12 @@ export default function Admin() {
     await deleteDoc(doc(db, 'education', id));
   };
 
+  // ── Gallery CRUD ─────────────────────────────────────────────
   const addGalleryItem = async () => {
     const safeGalleryUrl = sanitizeImageUrl(galleryUrl, '');
     if (!safeGalleryUrl) return alert('Add a valid image URL');
-    await addDoc(collection(db, 'gallery'), {
-      url: safeGalleryUrl,
-      span: gallerySpan,
-      order: gallery.length,
-      createdAt: new Date(),
-    });
-    setGalleryUrl('');
-    setGallerySpan('col-span-1 row-span-1');
-    setGalleryImageFile(null);
+    await addDoc(collection(db, 'gallery'), { url: safeGalleryUrl, span: gallerySpan, order: gallery.length, createdAt: new Date() });
+    setGalleryUrl(''); setGallerySpan('col-span-1 row-span-1'); setGalleryImageFile(null);
     alert('Visual portfolio item added!');
   };
 
@@ -316,14 +264,10 @@ export default function Admin() {
       setGalleryUploading(true);
       const imageRef = ref(storage, `gallery/${Date.now()}-${galleryImageFile.name}`);
       await uploadBytes(imageRef, galleryImageFile);
-      const url = await getDownloadURL(imageRef);
-      setGalleryUrl(url);
-      alert('Visual image uploaded and filled!');
-    } catch {
-      alert('Error uploading gallery image');
-    } finally {
-      setGalleryUploading(false);
-    }
+      setGalleryUrl(await getDownloadURL(imageRef));
+      alert('Visual image uploaded!');
+    } catch { alert('Error uploading gallery image'); }
+    finally { setGalleryUploading(false); }
   };
 
   const removeGalleryItem = async (id: string) => {
@@ -331,6 +275,7 @@ export default function Admin() {
     await deleteDoc(doc(db, 'gallery', id));
   };
 
+  // ── Theme ────────────────────────────────────────────────────
   const toggleTheme = async () => {
     const nextMode = mode === 'light' ? 'dark' : mode === 'dark' ? 'brown' : 'light';
     setMode(nextMode);
@@ -348,28 +293,33 @@ export default function Admin() {
   };
 
   const deleteMessage = async (id: string) => {
-    if (confirm('Delete message?')) {
-      await deleteDoc(doc(db, 'messages', id));
-    }
+    if (confirm('Delete message?')) await deleteDoc(doc(db, 'messages', id));
   };
 
+  // Helper for derived years-experience preview
+  const previewYears = profileFirstJobYear
+    ? new Date().getFullYear() - parseInt(profileFirstJobYear)
+    : null;
+
+  // ── Render ───────────────────────────────────────────────────
   return (
     <div style={{ display: 'flex', height: '100vh', background: 'hsl(var(--background))', color: 'hsl(var(--foreground))', fontFamily: 'Inter, Arial, sans-serif' }}>
+      {/* Sidebar */}
       <div style={{ width: '250px', background: 'hsl(var(--card))', borderRight: '1px solid hsl(var(--border))', padding: '22px', display: 'flex', flexDirection: 'column', backdropFilter: 'blur(8px)' }}>
         <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '30px', color: 'hsl(var(--primary))', letterSpacing: '1px' }}>ADMIN STUDIO</div>
-        <button className={`nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>Dashboard</button>
-        <button className={`nav-btn ${activeTab === 'projects' ? 'active' : ''}`} onClick={() => setActiveTab('projects')}>Projects</button>
-        <button className={`nav-btn ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>Profile</button>
-        <button className={`nav-btn ${activeTab === 'education' ? 'active' : ''}`} onClick={() => setActiveTab('education')}>Education</button>
-        <button className={`nav-btn ${activeTab === 'experience' ? 'active' : ''}`} onClick={() => setActiveTab('experience')}>Job Experience</button>
-        <button className={`nav-btn ${activeTab === 'gallery' ? 'active' : ''}`} onClick={() => setActiveTab('gallery')}>Visual Portfolio</button>
-        <button className={`nav-btn ${activeTab === 'theme' ? 'active' : ''}`} onClick={() => setActiveTab('theme')}>Theme</button>
-        <button className={`nav-btn ${activeTab === 'messages' ? 'active' : ''}`} onClick={() => setActiveTab('messages')}>Messages</button>
+        {['dashboard','projects','profile','education','experience','gallery','theme','messages'].map((tab) => (
+          <button key={tab} className={`nav-btn ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
+            {tab === 'experience' ? 'Job Experience' : tab === 'gallery' ? 'Visual Portfolio' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
         <button className="nav-btn" onClick={() => navigate('/')}>Exit Site</button>
         <button className="nav-btn" style={{ marginTop: 'auto' }} onClick={logout}>Logout</button>
       </div>
 
+      {/* Main content */}
       <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+
+        {/* ── DASHBOARD ─────────────────────────────────────── */}
         {activeTab === 'dashboard' && (
           <div className="section active">
             <div className="card">
@@ -382,6 +332,7 @@ export default function Admin() {
           </div>
         )}
 
+        {/* ── PROJECTS ──────────────────────────────────────── */}
         {activeTab === 'projects' && (
           <div className="section active">
             <div className="card">
@@ -390,21 +341,9 @@ export default function Admin() {
               <textarea value={projDesc} onChange={(e) => setProjDesc(e.target.value)} placeholder="Description" style={{ minHeight: '100px' }} />
               <input value={projCategory} onChange={(e) => setProjCategory(e.target.value)} placeholder="Category (e.g. Engineering)" />
               <input value={projImage} onChange={(e) => setProjImage(e.target.value)} placeholder="Image URL (optional)" />
-              {projImage && (
-                <img
-                  src={sanitizeImageUrl(projImage)}
-                  alt="Project preview"
-                  style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #333', marginTop: '10px' }}
-                />
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setProjImageFile(e.target.files?.[0] || null)}
-              />
-              <button className="save alt" onClick={uploadProjectImage} disabled={projUploading}>
-                {projUploading ? 'Uploading...' : 'Upload Image'}
-              </button>
+              {projImage && <img src={sanitizeImageUrl(projImage)} alt="Preview" style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #333', marginTop: '10px' }} />}
+              <input type="file" accept="image/*" onChange={(e) => setProjImageFile(e.target.files?.[0] || null)} />
+              <button className="save alt" onClick={uploadProjectImage} disabled={projUploading}>{projUploading ? 'Uploading...' : 'Upload Image'}</button>
               <input value={projLink} onChange={(e) => setProjLink(e.target.value)} placeholder="Project Link (optional)" />
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button className="save" onClick={saveProject}>{editingProjectId ? 'Update' : 'Save'}</button>
@@ -429,41 +368,123 @@ export default function Admin() {
           </div>
         )}
 
+        {/* ── PROFILE ───────────────────────────────────────── */}
         {activeTab === 'profile' && (
           <div className="section active">
             <div className="card">
               <h3>Edit Profile</h3>
-              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Name</label>
+
+              <label style={labelStyle}>Name</label>
               <input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Name" />
-              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Hero Badge</label>
-              <input value={profileBadge} onChange={(e) => setProfileBadge(e.target.value)} placeholder="Civil Engineer" />
-              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Professional Title</label>
+
+              <label style={labelStyle}>Hero Badge</label>
+              <input value={profileBadge} onChange={(e) => setProfileBadge(e.target.value)} placeholder="e.g. Civil Engineer" />
+
+              <label style={labelStyle}>Professional Title</label>
               <input value={profileSubtitle} onChange={(e) => setProfileSubtitle(e.target.value)} placeholder="Title" />
-              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Bio</label>
+
+              <label style={labelStyle}>Bio</label>
               <textarea value={profileBio} onChange={(e) => setProfileBio(e.target.value)} placeholder="Bio" style={{ minHeight: '150px' }} />
-              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>About Profile Image URL</label>
+
+              <label style={labelStyle}>About Profile Image URL</label>
               <input value={profileImage} onChange={(e) => setProfileImage(e.target.value)} placeholder="https://..." />
-              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Education</label>
+
+              <label style={labelStyle}>Education</label>
               <input value={profileEducation} onChange={(e) => setProfileEducation(e.target.value)} placeholder="Education" />
-              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Current Role</label>
+
+              <label style={labelStyle}>Current Role</label>
               <input value={profileCurrentRole} onChange={(e) => setProfileCurrentRole(e.target.value)} placeholder="Current role" />
-              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Email</label>
-              <input value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="admin@nayankuikel.com" />
-              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Phone</label>
+
+              <label style={labelStyle}>Email</label>
+              <input value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="email@example.com" />
+
+              <label style={labelStyle}>Phone</label>
               <input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+977-XXXXXXXXXX" />
-              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Contact Headline</label>
+
+              <label style={labelStyle}>Contact Headline</label>
               <textarea value={contactHeadline} onChange={(e) => setContactHeadline(e.target.value)} placeholder="Available for new opportunities..." style={{ minHeight: '90px' }} />
-              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>LinkedIn URL</label>
+
+              <label style={labelStyle}>LinkedIn URL</label>
               <input value={profileLinkedIn} onChange={(e) => setProfileLinkedIn(e.target.value)} placeholder="https://www.linkedin.com/in/..." />
-              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>LinkedIn Label</label>
+
+              <label style={labelStyle}>LinkedIn Label</label>
               <input value={contactLinkedInLabel} onChange={(e) => setContactLinkedInLabel(e.target.value)} placeholder="Nayan Kuikel" />
-              <label style={{ fontSize: '12px', color: '#aaa', marginTop: '10px', display: 'block' }}>Skills (comma separated)</label>
+
+              <label style={labelStyle}>Skills (comma separated)</label>
               <input value={profileSkills} onChange={(e) => setProfileSkills(e.target.value)} placeholder="Skill 1, Skill 2, Skill 3" />
-              <button className="save" onClick={updateProfile}>Update</button>
+
+              {/* ── STAT CARDS ─────────────────────────────── */}
+              <hr style={{ borderColor: 'hsl(var(--border))', margin: '22px 0 12px' }} />
+              <p style={{ fontSize: '11px', color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '4px' }}>
+                Stat Cards
+              </p>
+              <p style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>
+                These populate the 4 cards shown below your bio. Leave blank to hide a card.
+              </p>
+
+              <label style={labelStyle}>
+                First Job Year&nbsp;
+                <span style={{ opacity: 0.5 }}>(auto-calculates "Years Experience")</span>
+              </label>
+              <input
+                type="number"
+                value={profileFirstJobYear}
+                onChange={(e) => setProfileFirstJobYear(e.target.value)}
+                placeholder="e.g. 2016"
+                min="1980"
+                max={new Date().getFullYear()}
+              />
+              {previewYears !== null && (
+                <p style={{ fontSize: '11px', color: 'hsl(var(--primary))', marginTop: '4px' }}>
+                  → Will show: <b>{previewYears}+ Years Experience</b>
+                </p>
+              )}
+
+              <label style={labelStyle}>
+                Projects Delivered&nbsp;
+                <span style={{ opacity: 0.5 }}>(manual override — leave blank to hide)</span>
+              </label>
+              <input
+                type="number"
+                value={profileProjectCount}
+                onChange={(e) => setProfileProjectCount(e.target.value)}
+                placeholder="e.g. 40"
+                min="0"
+              />
+              {profileProjectCount === '' && (
+                <p style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                  Blank → card hidden. Enter a number to show it.
+                </p>
+              )}
+
+              <label style={labelStyle}>
+                Teams Led&nbsp;
+                <span style={{ opacity: 0.5 }}>(minimum number of teams led)</span>
+              </label>
+              <input
+                type="number"
+                value={profileTeamsLed}
+                onChange={(e) => setProfileTeamsLed(e.target.value)}
+                placeholder="e.g. 12"
+                min="0"
+              />
+
+              <label style={labelStyle}>
+                Location&nbsp;
+                <span style={{ opacity: 0.5 }}>(shown on "Based In" card)</span>
+              </label>
+              <input
+                value={profileLocation}
+                onChange={(e) => setProfileLocation(e.target.value)}
+                placeholder="e.g. Kathmandu, Nepal"
+              />
+
+              <button className="save" onClick={updateProfile}>Update Profile</button>
             </div>
           </div>
         )}
 
+        {/* ── EDUCATION ─────────────────────────────────────── */}
         {activeTab === 'education' && (
           <div className="section active">
             <div className="card">
@@ -495,6 +516,7 @@ export default function Admin() {
           </div>
         )}
 
+        {/* ── EXPERIENCE ────────────────────────────────────── */}
         {activeTab === 'experience' && (
           <div className="section active">
             <div className="card">
@@ -526,35 +548,20 @@ export default function Admin() {
           </div>
         )}
 
+        {/* ── GALLERY ───────────────────────────────────────── */}
         {activeTab === 'gallery' && (
           <div className="section active">
             <div className="card">
               <h3>Add Visual Portfolio Item</h3>
-              <input
-                value={galleryUrl}
-                onChange={(e) => setGalleryUrl(e.target.value)}
-                placeholder="Image URL"
-              />
-              {galleryUrl && (
-                <img
-                  src={sanitizeImageUrl(galleryUrl)}
-                  alt="Visual preview"
-                  style={{ width: '100%', maxHeight: '220px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #333', marginTop: '10px' }}
-                />
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setGalleryImageFile(e.target.files?.[0] || null)}
-              />
-              <button className="save alt" onClick={uploadGalleryImage} disabled={galleryUploading}>
-                {galleryUploading ? 'Uploading...' : 'Upload Image'}
-              </button>
+              <input value={galleryUrl} onChange={(e) => setGalleryUrl(e.target.value)} placeholder="Image URL" />
+              {galleryUrl && <img src={sanitizeImageUrl(galleryUrl)} alt="Preview" style={{ width: '100%', maxHeight: '220px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #333', marginTop: '10px' }} />}
+              <input type="file" accept="image/*" onChange={(e) => setGalleryImageFile(e.target.files?.[0] || null)} />
+              <button className="save alt" onClick={uploadGalleryImage} disabled={galleryUploading}>{galleryUploading ? 'Uploading...' : 'Upload Image'}</button>
               <select value={gallerySpan} onChange={(e) => setGallerySpan(e.target.value)}>
-                <option value="col-span-1 row-span-1">Normal (1x1)</option>
-                <option value="col-span-2 row-span-1">Wide (2x1)</option>
-                <option value="col-span-1 row-span-2">Tall (1x2)</option>
-                <option value="col-span-2 row-span-2">Large (2x2)</option>
+                <option value="col-span-1 row-span-1">Normal (1×1)</option>
+                <option value="col-span-2 row-span-1">Wide (2×1)</option>
+                <option value="col-span-1 row-span-2">Tall (1×2)</option>
+                <option value="col-span-2 row-span-2">Large (2×2)</option>
               </select>
               <button className="save" onClick={addGalleryItem}>Add Visual</button>
             </div>
@@ -563,11 +570,7 @@ export default function Admin() {
               {gallery.map((item: any) => (
                 <div key={item.id} style={{ borderBottom: '1px solid #333', padding: '10px 0', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <img
-                      src={sanitizeImageUrl(item.url)}
-                      alt="Portfolio visual"
-                      style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #333' }}
-                    />
+                    <img src={sanitizeImageUrl(item.url)} alt="Visual" style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #333' }} />
                     <div>
                       <p style={{ fontSize: '13px' }}>{item.url}</p>
                       <p style={{ fontSize: '11px', color: '#888' }}>{item.span || 'col-span-1 row-span-1'}</p>
@@ -580,6 +583,7 @@ export default function Admin() {
           </div>
         )}
 
+        {/* ── THEME ─────────────────────────────────────────── */}
         {activeTab === 'theme' && (
           <div className="section active">
             <div className="card">
@@ -607,6 +611,7 @@ export default function Admin() {
           </div>
         )}
 
+        {/* ── MESSAGES ──────────────────────────────────────── */}
         {activeTab === 'messages' && (
           <div className="section active">
             <div className="card">
@@ -618,10 +623,20 @@ export default function Admin() {
                   <button onClick={() => deleteMessage(m.id)} style={{ position: 'absolute', top: '15px', right: '0', background: 'transparent', border: '1px solid #ff4444', color: '#ff4444', padding: '2px 8px', cursor: 'pointer', fontSize: '10px' }}>Delete</button>
                 </div>
               ))}
+              {messages.length === 0 && <p style={{ color: '#666', fontSize: '13px' }}>No messages yet.</p>}
             </div>
           </div>
         )}
+
       </div>
     </div>
   );
 }
+
+// ── Shared label style ───────────────────────────────────────
+const labelStyle: React.CSSProperties = {
+  fontSize: '12px',
+  color: '#aaa',
+  marginTop: '10px',
+  display: 'block',
+};

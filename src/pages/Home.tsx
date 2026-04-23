@@ -9,6 +9,7 @@ import Projects from '../components/sections/Projects';
 import Contact from '../components/sections/Contact';
 import Gallery from '../components/sections/Gallery';
 import Skills from '../components/sections/Skills';
+import FloatingSocialSidebar from '../components/social/FloatingSocialSidebar';
 
 export default function Home() {
   const { hero, about, education, experience, projects, gallery, contact } = useContent();
@@ -47,6 +48,7 @@ export default function Home() {
           className="absolute bottom-[15%] right-[-120px] w-[360px] h-[360px] bg-accent/10 rounded-full blur-3xl"
         />
       </div>
+      <FloatingSocialSidebar links={contact?.socialLinks || []} />
       <Hero data={hero} />
       <div className="container mx-auto px-4 md:px-8 py-24 relative z-10">
         {sections.map((section, index) => (

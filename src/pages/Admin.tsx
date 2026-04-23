@@ -19,6 +19,8 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
 import { sanitizeImageUrl, sanitizeUrl } from '../utils/security';
 import { useAuth } from '../store/useAuth';
+import type { SocialLinkItem } from '../lib/socialPlatforms';
+import SocialLinksPanel from '../components/admin/SocialLinksPanel';
 
 // ── Skill Category types ──────────────────────────────────────
 interface SkillItem { name: string; level: number; }
@@ -60,6 +62,7 @@ export default function Admin() {
   const [contactLinkedInLabel, setContactLinkedInLabel] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
+  const [socialLinks, setSocialLinks] = useState<SocialLinkItem[]>([]);
   const [profileFirstJobYear, setProfileFirstJobYear] = useState('');
   const [profileProjectCount, setProfileProjectCount] = useState('');
   const [profileTeamsLed, setProfileTeamsLed] = useState('');
@@ -120,6 +123,7 @@ export default function Admin() {
       setContactLinkedInLabel(contact.linkedinLabel || '');
       setContactEmail(contact.email || '');
       setContactPhone(contact.phone || '');
+      setSocialLinks(Array.isArray(contact.socialLinks) ? contact.socialLinks : []);
     }
   }, [hero, about, contact]);
 
@@ -359,12 +363,22 @@ export default function Admin() {
     if (confirm('Delete message?')) await deleteDoc(doc(db, 'messages', id));
   };
 
+  const saveSocialLinks = async () => {
+    try {
+      await setDoc(doc(db, 'content', 'contact'), { socialLinks }, { merge: true });
+      alert('Social buttons updated!');
+    } catch {
+      alert('Error saving social buttons');
+    }
+  };
+
   const previewYears = profileFirstJobYear ? new Date().getFullYear() - parseInt(profileFirstJobYear) : null;
 
   const TABS = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'projects', label: 'Projects' },
     { id: 'profile', label: 'Profile' },
+    { id: 'social', label: 'Social Buttons' },
     { id: 'skills', label: 'Skills' },
     { id: 'education', label: 'Education' },
     { id: 'experience', label: 'Job Experience' },
@@ -484,6 +498,10 @@ export default function Admin() {
         )}
 
         {/* ── SKILLS ────────────────────────────────────────── */}
+        {activeTab === 'social' && (
+          <SocialLinksPanel socialLinks={socialLinks} setSocialLinks={setSocialLinks} onSave={saveSocialLinks} />
+        )}
+
         {activeTab === 'skills' && (
           <>
             <div className="card">

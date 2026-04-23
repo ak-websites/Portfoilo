@@ -46,12 +46,12 @@ export default function Contact({ data }: { data: any }) {
   };
 
   return (
-    <section id="contact" className="py-24 relative overflow-hidden">
+    <section id="contact" className="py-20 md:py-24 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -z-10 translate-x-1/2 -translate-y-1/2" />
       
-      <div className="container mx-auto px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-20 items-center">
+          <div className="grid lg:grid-cols-2 gap-10 md:gap-20 items-center">
             {/* Info Column */}
             <div className="space-y-12">
               <motion.div
@@ -59,10 +59,10 @@ export default function Contact({ data }: { data: any }) {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
               >
-                <h2 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-none">
+                <h2 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter mb-6 md:mb-8 leading-[0.92] md:leading-none">
                   LET'S <br /> <span className="text-primary">CONNECT</span>
                 </h2>
-                <p className="text-xl text-muted-foreground font-medium max-w-md leading-relaxed">
+                <p className="text-base md:text-xl text-muted-foreground font-medium max-w-md leading-relaxed">
                   {data?.headline || 'Update contact headline from admin.'}
                 </p>
               </motion.div>
@@ -94,7 +94,7 @@ export default function Contact({ data }: { data: any }) {
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              className="glass p-10 md:p-16 rounded-[3rem] shadow-2xl relative"
+              className="glass p-6 sm:p-8 md:p-16 rounded-[2rem] md:rounded-[3rem] shadow-2xl relative"
             >
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                 <div className="space-y-6">
@@ -164,13 +164,13 @@ export default function Contact({ data }: { data: any }) {
 
 function ContactInfoItem({ icon, label, value, href }: any) {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-6 group">
-      <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center border border-primary/10 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+    <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 md:gap-6 group">
+      <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-primary/5 flex items-center justify-center border border-primary/10 group-hover:bg-primary group-hover:text-primary-foreground transition-all shrink-0">
         {icon}
       </div>
       <div>
         <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-1">{label}</p>
-        <p className="text-xl font-bold tracking-tight">{value}</p>
+        <p className="text-base md:text-xl font-bold tracking-tight break-all">{value}</p>
       </div>
     </a>
   );

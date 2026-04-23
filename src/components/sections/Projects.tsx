@@ -18,7 +18,7 @@ function ProjectCard({ project, index }: { project: any; index: number }) {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.5, delay: index * 0.08 }}
-      className="group relative glass rounded-[2.5rem] overflow-hidden border-2 border-transparent hover:border-primary/20 transition-all duration-500 flex flex-col"
+      className="group relative glass rounded-[2rem] md:rounded-[2.5rem] overflow-hidden border-2 border-transparent hover:border-primary/20 transition-all duration-500 flex flex-col"
     >
       {/* Image */}
       <div className="aspect-[16/9] overflow-hidden relative">
@@ -43,7 +43,7 @@ function ProjectCard({ project, index }: { project: any; index: number }) {
         </div>
       </div>
       
-      <div className="p-8 space-y-3 flex flex-col flex-grow">
+      <div className="p-6 md:p-8 space-y-3 flex flex-col flex-grow">
         <h3 className="text-xl font-black tracking-tight leading-tight group-hover:text-primary transition-colors duration-300">
           {project.title}
         </h3>
@@ -97,20 +97,20 @@ export default function Projects({ data }: { data: any[] }) {
   const filteredProjects = filter === 'All' ? projects : projects.filter((p: any) => p.category === filter);
 
   return (
-    <section id="projects" className="py-24">
-      <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
+    <section id="projects" className="py-20 md:py-24">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 md:mb-16 gap-6 md:gap-8">
         <div>
-          <h2 className="text-6xl md:text-8xl font-black tracking-tighter leading-none uppercase">
+          <h2 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter leading-[0.92] md:leading-none uppercase">
             Selected <br /> <span className="text-primary">Projects</span>
           </h2>
         </div>
         
-        <div className="flex flex-wrap gap-3">
+        <div className="flex gap-2.5 md:gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setFilter(cat as string)}
-              className={`px-5 py-2 rounded-full font-black uppercase tracking-widest text-[10px] transition-all ${
+              className={`px-4 md:px-5 py-2 rounded-full font-black uppercase tracking-[0.18em] md:tracking-widest text-[10px] transition-all whitespace-nowrap ${
                 filter === cat 
                   ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105' 
                   : 'bg-accent/50 hover:bg-accent text-muted-foreground hover:text-foreground'
@@ -122,7 +122,7 @@ export default function Projects({ data }: { data: any[] }) {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
         {projects.length === 0 && (
           <div className="md:col-span-2 xl:col-span-3 glass rounded-[2rem] p-10 text-center text-muted-foreground">
             No projects yet. Add projects from the admin panel.

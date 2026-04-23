@@ -1,55 +1,8 @@
 import { motion, useInView } from 'framer-motion';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import {
   Layers, BarChart3, Hammer, Terminal
 } from 'lucide-react';
-
-// Fallback static data
-const DEFAULT_SKILL_CATEGORIES = [
-  {
-    label: 'Structural Design',
-    icon: <Layers size={22} />,
-    skills: [
-      { name: 'AutoCAD', level: 92 },
-      { name: 'ETABS / SAP2000', level: 85 },
-      { name: 'Revit BIM', level: 78 },
-    ],
-  },
-  {
-    label: 'Project Management',
-    icon: <BarChart3 size={22} />,
-    skills: [
-      { name: 'MS Project', level: 88 },
-      { name: 'Primavera P6', level: 74 },
-      { name: 'Cost Estimation', level: 90 },
-    ],
-  },
-  {
-    label: 'Site & Field',
-    icon: <Hammer size={22} />,
-    skills: [
-      { name: 'Site Supervision', level: 95 },
-      { name: 'Quality Control', level: 87 },
-      { name: 'Surveying', level: 80 },
-    ],
-  },
-  {
-    label: 'Software & Tools',
-    icon: <Terminal size={22} />,
-    skills: [
-      { name: 'GIS Mapping', level: 70 },
-      { name: 'STAAD.Pro', level: 75 },
-      { name: 'Navisworks', level: 65 },
-    ],
-  },
-];
-
-const DEFAULT_QUICK_SKILLS = [
-  'Structural Analysis', 'BIM Modeling', 'Contract Management',
-  'Concrete Design', 'Hydraulic Engineering', 'Road Design',
-  'Environmental Impact', 'Steel Detailing', 'Foundation Engineering',
-  'Drainage Systems', 'Seismic Design', 'Construction Law',
-];
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   'Structural Design': <Layers size={22} />,
@@ -58,41 +11,55 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   'Software & Tools': <Terminal size={22} />,
 };
 
+const FALLBACK_ICONS = [<Layers size={22} />, <BarChart3 size={22} />, <Hammer size={22} />, <Terminal size={22} />];
+
 export default function Skills({ data }: { data: any }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-60px' });
 
-  // Use admin-provided skill categories if available, else defaults
   const skillCategories = data?.skillCategories?.length > 0
     ? data.skillCategories.map((cat: any) => ({
         ...cat,
-        icon: ICON_MAP[cat.label] || <Layers size={22} />,
+        icon: ICON_MAP[cat.label] || FALLBACK_ICONS[Math.abs(cat.label?.length || 0) % FALLBACK_ICONS.length],
       }))
-    : DEFAULT_SKILL_CATEGORIES;
+    : [];
 
-  const chips: string[] = data?.skills?.length > 0 ? data.skills : DEFAULT_QUICK_SKILLS;
+  const chips: string[] = data?.skills?.length > 0 ? data.skills : [];
+
+  const derivedCategories = !skillCategories.length && chips.length
+    ? [{
+        label: 'Capabilities',
+        icon: <Layers size={22} />,
+        skills: chips.slice(0, 8).map((skill: string, index: number) => ({
+          name: skill,
+          level: Math.max(60, 92 - index * 4),
+        })),
+      }]
+    : [];
+
+  const displayCategories = skillCategories.length ? skillCategories : derivedCategories;
 
   return (
-    <section id="skills" className="py-24" ref={ref}>
-      <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
+    <section id="skills" className="py-20 md:py-24" ref={ref}>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 md:mb-16 gap-6 md:gap-8">
         <div>
-          <h2 className="text-6xl md:text-8xl font-black tracking-tighter leading-none uppercase">
+          <h2 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter leading-[0.92] md:leading-none uppercase">
             Core <br /> <span className="text-primary">Skills</span>
           </h2>
         </div>
-        <p className="text-muted-foreground font-bold uppercase tracking-[0.3em] text-xs">
+        <p className="text-muted-foreground font-bold uppercase tracking-[0.24em] md:tracking-[0.3em] text-[10px] md:text-xs">
           Technical Expertise
         </p>
       </div>
 
-      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-14">
-        {skillCategories.map((cat: any, catIdx: number) => (
+      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-10 md:mb-14">
+        {displayCategories.map((cat: any, catIdx: number) => (
           <motion.div
             key={cat.label}
             initial={{ opacity: 0, y: 32 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: catIdx * 0.1, ease: 'easeOut' }}
-            className="glass p-8 rounded-[2rem] border border-transparent hover:border-primary/20 transition-all duration-500 group"
+            className="glass p-6 md:p-8 rounded-[2rem] border border-transparent hover:border-primary/20 transition-all duration-500 group"
           >
             <div className="flex items-center gap-4 mb-8">
               <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
@@ -115,24 +82,30 @@ export default function Skills({ data }: { data: any }) {
         ))}
       </div>
 
+      {!displayCategories.length && (
+        <div className="glass p-8 md:p-10 rounded-[2rem] text-center text-muted-foreground mb-10 md:mb-14">
+          No skills found in the database yet. Add skills from the admin panel to populate this section.
+        </div>
+      )}
+
       {chips.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.5 }}
-          className="glass p-10 rounded-[2rem]"
+          className="glass p-6 md:p-10 rounded-[2rem]"
         >
           <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-50 mb-6">
             Additional Competencies
           </p>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2.5 md:gap-3">
             {chips.map((skill: string, i: number) => (
               <motion.span
                 key={skill}
                 initial={{ opacity: 0, scale: 0.85 }}
                 animate={isInView ? { opacity: 1, scale: 1 } : {}}
                 transition={{ delay: 0.5 + i * 0.04, duration: 0.3 }}
-                className="px-5 py-2 bg-primary/8 border border-primary/15 text-primary rounded-full text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all cursor-default"
+                className="px-4 md:px-5 py-2 bg-primary/8 border border-primary/15 text-primary rounded-full text-[10px] md:text-xs font-black uppercase tracking-[0.18em] md:tracking-widest hover:bg-primary hover:text-primary-foreground transition-all cursor-default"
               >
                 {skill}
               </motion.span>

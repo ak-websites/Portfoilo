@@ -11,19 +11,19 @@ export default function Gallery({ data }: { data: any[] }) {
   ];
 
   return (
-    <section id="gallery" className="py-24">
-       <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
+    <section id="gallery" className="py-20 md:py-24">
+       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 md:mb-16 gap-6 md:gap-8">
         <div>
-          <h2 className="text-6xl md:text-8xl font-black tracking-tighter leading-none uppercase">
+          <h2 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter leading-[0.92] md:leading-none uppercase">
             Visual <br /> <span className="text-primary">Portfolio</span>
           </h2>
         </div>
-        <p className="text-muted-foreground font-bold uppercase tracking-[0.3em] text-xs">
+        <p className="text-muted-foreground font-bold uppercase tracking-[0.22em] md:tracking-[0.3em] text-[10px] md:text-xs">
           Captured Excellence
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 grid-rows-2 gap-4 h-[600px] md:h-[800px]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 md:grid-rows-2 gap-4 auto-rows-[220px] md:auto-rows-auto md:h-[800px]">
         {items.slice(0, 5).map((item, index) => (
           <motion.div
             key={item.id}
@@ -31,7 +31,7 @@ export default function Gallery({ data }: { data: any[] }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: index * 0.1 }}
-            className={`${item.span || 'col-span-1 row-span-1'} relative overflow-hidden rounded-[2rem] group`}
+            className={`${item.span || 'col-span-1 row-span-1'} relative overflow-hidden rounded-[1.5rem] md:rounded-[2rem] group min-h-[220px]`}
           >
             <img 
               src={sanitizeImageUrl(item.url)} 

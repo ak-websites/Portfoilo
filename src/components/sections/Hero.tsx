@@ -1,4 +1,6 @@
 import { motion } from 'framer-motion';
+import { useTheme } from '../../store/useTheme';
+import { getThemeHeroMotion } from '../../lib/themePresentation';
 
 interface HeroProps {
   data: {
@@ -10,13 +12,16 @@ interface HeroProps {
 }
 
 export default function Hero({ data }: HeroProps) {
+  const { themeSet } = useTheme();
+  const heroMotion = getThemeHeroMotion(themeSet);
+
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 pt-24 pb-16 md:px-0 md:pt-20">
       {/* Background Layer */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 premium-gradient opacity-30" />
@@ -33,44 +38,44 @@ export default function Hero({ data }: HeroProps) {
         
         {/* Floating Shapes */}
         <motion.div 
-          animate={{ x: [0, 50, 0], y: [0, 30, 0], rotate: [0, 10, 0] }}
+          animate={heroMotion.primaryAnimate}
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]"
+          className={`absolute bg-primary/10 blur-[90px] md:blur-[120px] ${heroMotion.primaryClassName}`}
         />
         <motion.div 
-          animate={{ x: [0, -50, 0], y: [0, -30, 0], rotate: [0, -10, 0] }}
+          animate={heroMotion.secondaryAnimate}
           transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[100px]"
+          className={`absolute bg-accent/10 blur-[80px] md:blur-[100px] ${heroMotion.secondaryClassName}`}
         />
       </div>
 
-      <div className="container mx-auto px-6 z-10">
+      <div className="container mx-auto px-2 md:px-6 z-10">
         <div className="max-w-5xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8 }}
           >
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-primary text-[10px] font-black uppercase tracking-widest mb-8">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-primary text-[10px] font-black uppercase tracking-[0.22em] mb-6 md:mb-8">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               {data?.badge || "Add badge from admin"}
             </span>
             
-            <h1 className="text-6xl md:text-8xl lg:text-[10rem] font-black tracking-tighter mb-8 leading-[0.85] text-balance">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-[10rem] font-black tracking-tighter mb-6 md:mb-8 leading-[0.9] md:leading-[0.85] text-balance">
               {data?.title || "Add name from admin"}
             </h1>
             
-            <p className="text-xl md:text-3xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-tight font-medium">
+            <p className="text-base sm:text-lg md:text-3xl text-muted-foreground max-w-3xl mx-auto mb-8 md:mb-12 leading-snug md:leading-tight font-medium px-2 sm:px-0">
               {data?.subtitle || "Add subtitle from admin"}
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 md:gap-4">
               <motion.button
                 onClick={() => scrollTo('projects')}
                 whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="group relative inline-flex items-center gap-3 px-10 py-5 bg-primary text-primary-foreground rounded-2xl font-black uppercase tracking-widest overflow-hidden shadow-xl shadow-primary/20 cursor-pointer"
+                className="group relative inline-flex w-full sm:w-auto items-center justify-center gap-3 px-7 md:px-10 py-4 md:py-5 bg-primary text-primary-foreground rounded-2xl font-black uppercase tracking-[0.22em] overflow-hidden shadow-xl shadow-primary/20 cursor-pointer text-xs md:text-sm"
               >
                 <span className="relative z-10 text-sm">View Projects</span>
                 <motion.span 
@@ -86,7 +91,7 @@ export default function Hero({ data }: HeroProps) {
                 whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="group inline-flex items-center gap-3 px-10 py-5 bg-background/80 backdrop-blur-sm border-2 border-border rounded-2xl font-black uppercase tracking-widest text-sm hover:border-primary/40 hover:bg-primary/5 transition-all duration-300 cursor-pointer"
+                className="group inline-flex w-full sm:w-auto items-center justify-center gap-3 px-7 md:px-10 py-4 md:py-5 bg-background/80 backdrop-blur-sm border-2 border-border rounded-2xl font-black uppercase tracking-[0.22em] text-xs md:text-sm hover:border-primary/40 hover:bg-primary/5 transition-all duration-300 cursor-pointer"
               >
                 <span>Get in Touch</span>
                 <motion.span 
@@ -107,7 +112,7 @@ export default function Hero({ data }: HeroProps) {
       <motion.div 
         animate={{ y: [0, 10, 0] }}
         transition={{ repeat: Infinity, duration: 2 }}
-        className="absolute bottom-12 left-1/2 -translate-x-1/2 w-8 h-14 border-2 border-primary/20 rounded-full flex justify-center p-2 z-20 cursor-pointer"
+        className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-8 h-14 border-2 border-primary/20 rounded-full hidden sm:flex justify-center p-2 z-20 cursor-pointer"
         onClick={() => scrollTo('about')}
       >
         <motion.div 

@@ -39,8 +39,8 @@ export default function About({ data }: { data: any }) {
   ].filter(Boolean);
 
   return (
-    <section id="about" className="py-24" ref={ref}>
-      <div className="grid lg:grid-cols-2 gap-16 items-center mb-16">
+    <section id="about" className="py-20 md:py-24" ref={ref}>
+      <div className="grid lg:grid-cols-2 gap-10 md:gap-16 items-center mb-12 md:mb-16">
         {/* Image */}
         <motion.div
           initial={{ opacity: 0, x: -40 }}
@@ -48,7 +48,7 @@ export default function About({ data }: { data: any }) {
           transition={{ duration: 0.7 }}
           className="relative group"
         >
-          <div className="aspect-[4/5] rounded-[3rem] overflow-hidden border-8 border-background shadow-2xl relative z-10">
+          <div className="aspect-[4/5] rounded-[2rem] md:rounded-[3rem] overflow-hidden border-[6px] md:border-8 border-background shadow-2xl relative z-10">
             {data?.image ? (
               <img
                 src={data.image}
@@ -72,10 +72,10 @@ export default function About({ data }: { data: any }) {
           className="space-y-8"
         >
           <div>
-            <h2 className="text-5xl font-black tracking-tighter mb-4 leading-none uppercase">
+            <h2 className="text-4xl sm:text-5xl font-black tracking-tighter mb-4 leading-[0.92] uppercase">
               Engineering <br /> <span className="text-primary">with Purpose</span>
             </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed font-medium">
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed font-medium">
               {bio ? displayBio : 'Add your bio from the admin panel.'}
             </p>
             {isBioLong && bio && (
@@ -92,7 +92,7 @@ export default function About({ data }: { data: any }) {
             )}
           </div>
 
-          <div className="grid gap-4">
+          <div className="grid gap-3 md:gap-4">
             {data?.education && (
               <Metric icon={<GraduationCap className="text-primary" />} label="Education" value={data.education} />
             )}
@@ -123,7 +123,7 @@ export default function About({ data }: { data: any }) {
               initial={{ opacity: 0, y: 24 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.3 + i * 0.08 }}
-              className="glass p-8 rounded-[1.5rem] text-center group hover:border-primary/20 border-2 border-transparent transition-all"
+              className="glass p-6 md:p-8 rounded-[1.5rem] text-center group hover:border-primary/20 border-2 border-transparent transition-all"
             >
               <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                 {stat.icon}

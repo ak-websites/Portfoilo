@@ -26,8 +26,8 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass h-20 flex items-center px-6 md:px-12 justify-between">
-      <div className="flex items-center gap-8">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass h-18 md:h-20 flex items-center px-4 md:px-12 justify-between">
+      <div className="flex items-center gap-4 md:gap-8 min-w-0">
         {/* Logo - no more AUTHORIZED_ACCESS */}
         <Link to="/" className="flex items-center gap-3 group">
           <motion.div
@@ -38,7 +38,7 @@ export default function Navbar() {
           >
             NK
           </motion.div>
-          <span className="font-black text-lg tracking-tight uppercase hidden sm:block">Nayan Kuikel</span>
+          <span className="font-black text-sm md:text-lg tracking-tight uppercase hidden sm:block">Nayan Kuikel</span>
         </Link>
 
         <div className="hidden lg:flex items-center gap-8 text-sm font-bold uppercase tracking-widest text-muted-foreground">
@@ -49,10 +49,10 @@ export default function Navbar() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
         <button
           onClick={toggleMode}
-          className="p-2.5 rounded-xl bg-accent hover:bg-accent/80 transition-all flex items-center justify-center border border-border"
+          className="p-2.5 rounded-xl bg-accent hover:bg-accent/80 transition-all flex items-center justify-center border border-border shrink-0"
           title={`Switch to ${mode === 'light' ? 'Dark' : mode === 'dark' ? 'Brown' : 'Light'} Mode`}
         >
           {mode === 'light' && <Sun size={18} />}
@@ -104,14 +104,14 @@ export default function Navbar() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-24 left-6 right-6 glass rounded-3xl p-8 flex flex-col gap-5 lg:hidden shadow-2xl"
+            className="absolute top-20 md:top-24 left-4 right-4 md:left-6 md:right-6 glass rounded-[2rem] p-6 md:p-8 flex flex-col gap-4 lg:hidden shadow-2xl max-h-[calc(100vh-6rem)] overflow-y-auto"
           >
             {['about', 'experience', 'projects', 'contact'].map((section) => (
               <a 
                 key={section}
                 href={`#${section}`} 
                 onClick={() => setIsMobileMenuOpen(false)} 
-                className="text-xl font-black uppercase tracking-wider capitalize hover:text-primary transition-colors"
+                className="text-lg md:text-xl font-black uppercase tracking-[0.18em] capitalize hover:text-primary transition-colors"
               >
                 {section}
               </a>

@@ -1,6 +1,7 @@
 import { motion, useScroll, useSpring, useTransform, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import { useContent } from '../store/useContent';
+import { useTheme } from '../store/useTheme';
 import Hero from '../components/sections/Hero';
 import About from '../components/sections/About';
 import Education from '../components/sections/Education';
@@ -10,9 +11,11 @@ import Contact from '../components/sections/Contact';
 import Gallery from '../components/sections/Gallery';
 import Skills from '../components/sections/Skills';
 import FloatingSocialSidebar from '../components/social/FloatingSocialSidebar';
+import { getThemeRevealVariants } from '../lib/themePresentation';
 
 export default function Home() {
   const { hero, about, education, experience, projects, gallery, contact } = useContent();
+  const { themeSet } = useTheme();
   const { scrollYProgress } = useScroll();
   const progressScaleX = useSpring(scrollYProgress, {
     stiffness: 120,
@@ -50,9 +53,9 @@ export default function Home() {
       </div>
       <FloatingSocialSidebar links={contact?.socialLinks || []} />
       <Hero data={hero} />
-      <div className="container mx-auto px-4 md:px-8 py-24 relative z-10">
+      <div className="container mx-auto px-4 md:px-8 py-16 md:py-24 relative z-10 themed-sections">
         {sections.map((section, index) => (
-          <FadeInSection key={section.id} index={index}>
+          <FadeInSection key={section.id} index={index} themeSet={themeSet}>
             {index > 0 && <div className="section-divider" />}
             {section.node}
           </FadeInSection>
@@ -62,15 +65,25 @@ export default function Home() {
   );
 }
 
-function FadeInSection({ children, index }: { children: React.ReactNode; index: number }) {
+function FadeInSection({
+  children,
+  index,
+  themeSet,
+}: {
+  children: React.ReactNode;
+  index: number;
+  themeSet: ReturnType<typeof useTheme>['themeSet'];
+}) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });
+  const variants = getThemeRevealVariants(themeSet);
 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 48 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 48 }}
+      initial="hidden"
+      animate={isInView ? 'visible' : 'hidden'}
+      variants={variants}
       transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.05 }}
       className={index === 0 ? '' : 'section-shell'}
     >

@@ -12,7 +12,7 @@ export default function Gallery({ data }: { data: any[] }) {
 
   return (
     <section id="gallery" className="py-20 md:py-24">
-       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 md:mb-16 gap-6 md:gap-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 md:mb-16 gap-6 md:gap-8">
         <div>
           <h2 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter leading-[0.92] md:leading-none uppercase">
             Visual <br /> <span className="text-primary">Portfolio</span>
@@ -23,7 +23,36 @@ export default function Gallery({ data }: { data: any[] }) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 md:grid-rows-2 gap-4 auto-rows-[220px] md:auto-rows-auto md:h-[800px]">
+      <div className="md:hidden">
+        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-4 px-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {items.slice(0, 5).map((item, index) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, x: 30, scale: 0.96 }}
+              whileInView={{ opacity: 1, x: 0, scale: 1 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 0.45, delay: index * 0.06 }}
+              className="snap-center shrink-0 w-[84vw] max-w-[24rem]"
+            >
+              <div className="relative overflow-hidden rounded-[2rem] min-h-[24rem]">
+                <img
+                  src={sanitizeImageUrl(item.url)}
+                  alt="Work gallery"
+                  className="w-full h-full absolute inset-0 object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                <div className="absolute left-5 right-5 bottom-5">
+                  <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white backdrop-blur-md">
+                    Swipe Through Work
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 lg:grid-rows-2 gap-4 auto-rows-[220px] lg:auto-rows-auto lg:h-[800px]">
         {items.slice(0, 5).map((item, index) => (
           <motion.div
             key={item.id}
@@ -31,11 +60,11 @@ export default function Gallery({ data }: { data: any[] }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: index * 0.1 }}
-            className={`${getResponsiveSpanClass(item.span)} relative overflow-hidden rounded-[1.5rem] md:rounded-[2rem] group min-h-[220px]`}
+            className={`${getResponsiveSpanClass(item.span)} relative overflow-hidden rounded-[2rem] group min-h-[220px]`}
           >
-            <img 
-              src={sanitizeImageUrl(item.url)} 
-              alt="Work gallery" 
+            <img
+              src={sanitizeImageUrl(item.url)}
+              alt="Work gallery"
               className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110"
             />
             <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -53,12 +82,12 @@ export default function Gallery({ data }: { data: any[] }) {
 function getResponsiveSpanClass(span?: string) {
   switch (span) {
     case 'col-span-2 row-span-2':
-      return 'sm:col-span-2 md:col-span-2 md:row-span-2';
+      return 'col-span-2 lg:col-span-2 lg:row-span-2';
     case 'col-span-2 row-span-1':
-      return 'sm:col-span-2 md:col-span-2 md:row-span-1';
+      return 'col-span-2 lg:col-span-2 lg:row-span-1';
     case 'col-span-1 row-span-2':
-      return 'md:col-span-1 md:row-span-2';
+      return 'lg:col-span-1 lg:row-span-2';
     default:
-      return 'md:col-span-1 md:row-span-1';
+      return 'lg:col-span-1 lg:row-span-1';
   }
 }

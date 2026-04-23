@@ -9,13 +9,14 @@ function ProjectCard({ project, index }: { project: any; index: number }) {
   const [expanded, setExpanded] = useState(false);
   const desc: string = project.description || '';
   const isLong = desc.length > DESCRIPTION_LIMIT;
+  const isEven = index % 2 === 0;
   const displayDesc = expanded || !isLong ? desc : desc.slice(0, DESCRIPTION_LIMIT) + '…';
 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.9 }}
-      whileInView={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0, y: 30, x: isEven ? -18 : 18, rotate: isEven ? -1 : 1 }}
+      whileInView={{ opacity: 1, y: 0, x: 0, rotate: 0 }}
       viewport={{ once: true, amount: 0.2 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.5, delay: index * 0.08 }}
@@ -106,7 +107,24 @@ export default function Projects({ data }: { data: any[] }) {
           </h2>
         </div>
         
-        <div className="flex gap-2.5 md:gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+        <div className="w-full md:hidden">
+          <label className="block text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground mb-2">
+            Category
+          </label>
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="w-full rounded-2xl border border-border bg-background/90 px-4 py-3 text-sm font-bold outline-none"
+          >
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="hidden md:flex gap-2.5 md:gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
           {categories.map((cat) => (
             <button
               key={cat}
@@ -123,7 +141,7 @@ export default function Projects({ data }: { data: any[] }) {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
         {projects.length === 0 && (
           <div className="md:col-span-2 xl:col-span-3 glass rounded-[2rem] p-10 text-center text-muted-foreground">
             No projects yet. Add projects from the admin panel.

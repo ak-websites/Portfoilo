@@ -25,10 +25,10 @@ export default function Experience({ data }: { data: any[] }) {
         {experiences.map((exp, index) => (
           <motion.div
             key={exp.id}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: 26, y: 24 }}
+            whileInView={{ opacity: 1, x: 0, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ duration: 0.55, delay: index * 0.1 }}
             className="group relative"
           >
             <div className="glass p-6 md:p-14 rounded-[2rem] md:rounded-[3rem] border-2 border-transparent hover:border-primary/20 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">

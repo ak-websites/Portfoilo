@@ -26,10 +26,10 @@ export default function Education({ data }: { data: any[] }) {
         {education.map((item, index) => (
           <motion.div
             key={item.id}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: -26, y: 20 }}
+            whileInView={{ opacity: 1, x: 0, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
             className="glass p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] border-2 border-transparent hover:border-primary/20 transition-all duration-500"
           >
             <div className="flex items-start gap-4 md:gap-5">

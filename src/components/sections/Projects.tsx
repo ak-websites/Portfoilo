@@ -10,7 +10,7 @@ function ProjectCard({ project, index }: { project: any; index: number }) {
   const desc: string = project.description || '';
   const isLong = desc.length > DESCRIPTION_LIMIT;
   const isEven = index % 2 === 0;
-  const displayDesc = expanded || !isLong ? desc : `${desc.slice(0, DESCRIPTION_LIMIT)}...`;
+  const displayDesc = expanded || !isLong ? desc : desc.slice(0, DESCRIPTION_LIMIT) + '…';
 
   return (
     <motion.div

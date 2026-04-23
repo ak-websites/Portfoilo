@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../store/useAuth';
 import { LogOut, LayoutDashboard, User, Menu, X, Sun, Moon, Coffee } from 'lucide-react';
@@ -11,6 +11,7 @@ export default function Navbar() {
   const { user, isAdmin } = useAuth();
   const { mode, setMode } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const toggleMode = async () => {
     const nextMode = mode === 'light' ? 'dark' : mode === 'dark' ? 'brown' : 'light';

@@ -1,76 +1,54 @@
-import { Suspense, lazy, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useAuth } from './store/useAuth';
 import { useTheme } from './store/useTheme';
 import { useContent } from './store/useContent';
+
+// Pages
+import Home from './pages/Home';
+import Admin from './pages/Admin';
+import Login from './pages/Login';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 
-const Home = lazy(() => import('./pages/Home'));
-const Admin = lazy(() => import('./pages/Admin'));
-const Login = lazy(() => import('./pages/Login'));
-
 function App() {
-  return (
-    <Router>
-      <AppShell />
-    </Router>
-  );
-}
-
-function AppShell() {
-  const location = useLocation();
   const initAuth = useAuth((state) => state.initialize);
   const syncTheme = useTheme((state) => state.syncWithFirestore);
-  const fetchContent = useContent((state) => state.fetchContent);
   const syncContent = useContent((state) => state.syncContent);
 
   useEffect(() => {
     const unsubAuth = initAuth();
     const unsubTheme = syncTheme();
+    const unsubContent = syncContent();
 
     return () => {
       unsubAuth();
       unsubTheme();
+      unsubContent();
     };
-  }, [initAuth, syncTheme]);
-
-  useEffect(() => {
-    if (location.pathname.startsWith('/admin')) {
-      const unsubContent = syncContent();
-      return () => unsubContent();
-    }
-
-    void fetchContent();
-    return undefined;
-  }, [location.pathname, fetchContent, syncContent]);
+  }, [initAuth, syncTheme, syncContent]);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Suspense fallback={<RouteLoader />}>
+    <Router>
+      <div className="min-h-screen flex flex-col">
         <Routes>
+          {/* Main Portfolio Layout */}
           <Route path="/" element={<><Navbar /><main className="flex-grow"><Home /></main><Footer /></>} />
           <Route path="/login" element={<main className="flex-grow"><Login /></main>} />
-          <Route
-            path="/admin/*"
+          
+          {/* Separate Admin Dashboard Layout (No Site Navbar/Footer) */}
+          <Route 
+            path="/admin/*" 
             element={
               <ProtectedRoute>
                 <Admin />
               </ProtectedRoute>
-            }
+            } 
           />
         </Routes>
-      </Suspense>
-    </div>
-  );
-}
-
-function RouteLoader() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="h-10 w-10 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
-    </div>
+      </div>
+    </Router>
   );
 }
 

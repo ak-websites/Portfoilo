@@ -169,7 +169,7 @@ export default function Login() {
             onClick={() => navigate('/')}
             className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground hover:text-primary transition-colors"
           >
-            Back to Portfolio
+            ← Back to Portfolio
           </button>
         </div>
       </motion.div>

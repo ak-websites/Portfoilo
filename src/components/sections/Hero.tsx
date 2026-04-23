@@ -1,5 +1,4 @@
-import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowRight, ArrowUpRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useTheme } from '../../store/useTheme';
 import { getThemeHeroMotion } from '../../lib/themePresentation';
 
@@ -15,7 +14,6 @@ interface HeroProps {
 export default function Hero({ data }: HeroProps) {
   const { themeSet } = useTheme();
   const heroMotion = getThemeHeroMotion(themeSet);
-  const prefersReducedMotion = useReducedMotion();
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
@@ -40,12 +38,12 @@ export default function Hero({ data }: HeroProps) {
         
         {/* Floating Shapes */}
         <motion.div 
-          animate={prefersReducedMotion ? { opacity: 1 } : heroMotion.primaryAnimate}
+          animate={heroMotion.primaryAnimate}
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
           className={`absolute bg-primary/10 blur-[90px] md:blur-[120px] ${heroMotion.primaryClassName}`}
         />
         <motion.div 
-          animate={prefersReducedMotion ? { opacity: 1 } : heroMotion.secondaryAnimate}
+          animate={heroMotion.secondaryAnimate}
           transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
           className={`absolute bg-accent/10 blur-[80px] md:blur-[100px] ${heroMotion.secondaryClassName}`}
         />
@@ -81,12 +79,10 @@ export default function Hero({ data }: HeroProps) {
               >
                 <span className="relative z-10 text-sm">View Projects</span>
                 <motion.span 
-                  className="relative z-10"
-                  animate={prefersReducedMotion ? undefined : { x: [0, 4, 0] }}
+                  className="relative z-10 text-lg"
+                  animate={{ x: [0, 4, 0] }}
                   transition={{ repeat: Infinity, duration: 1.5 }}
-                >
-                  <ArrowRight size={18} />
-                </motion.span>
+                >→</motion.span>
                 <span className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
               </motion.button>
 
@@ -99,12 +95,10 @@ export default function Hero({ data }: HeroProps) {
               >
                 <span>Get in Touch</span>
                 <motion.span 
-                  className="text-primary"
-                  animate={prefersReducedMotion ? undefined : { rotate: [0, 15, 0] }}
+                  className="text-lg text-primary"
+                  animate={{ rotate: [0, 15, 0] }}
                   transition={{ repeat: Infinity, duration: 2 }}
-                >
-                  <ArrowUpRight size={18} />
-                </motion.span>
+                >↗</motion.span>
               </motion.button>
             </div>
           </motion.div>
@@ -116,13 +110,13 @@ export default function Hero({ data }: HeroProps) {
       
       {/* Scroll indicator */}
       <motion.div 
-        animate={prefersReducedMotion ? undefined : { y: [0, 10, 0] }}
+        animate={{ y: [0, 10, 0] }}
         transition={{ repeat: Infinity, duration: 2 }}
         className="absolute bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 w-8 h-14 border-2 border-primary/20 rounded-full hidden sm:flex justify-center p-2 z-20 cursor-pointer"
         onClick={() => scrollTo('about')}
       >
         <motion.div 
-          animate={prefersReducedMotion ? undefined : { height: ["20%", "60%", "20%"] }}
+          animate={{ height: ["20%", "60%", "20%"] }}
           transition={{ repeat: Infinity, duration: 1.5 }}
           className="w-1 bg-primary rounded-full" 
         />

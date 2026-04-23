@@ -11,7 +11,7 @@ export default function About({ data }: { data: any }) {
 
   const bio: string = data?.bio || '';
   const isBioLong = bio.length > BIO_LIMIT;
-  const displayBio = bioExpanded || !isBioLong ? bio : `${bio.slice(0, BIO_LIMIT)}...`;
+  const displayBio = bioExpanded || !isBioLong ? bio : bio.slice(0, BIO_LIMIT) + '…';
 
   const currentYear = new Date().getFullYear();
   const firstJobYear = data?.firstJobYear ? parseInt(data.firstJobYear) : null;

@@ -1,5 +1,5 @@
-import { motion, useScroll, useSpring, useTransform, useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { motion, useScroll, useSpring, useTransform, useInView, useReducedMotion } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
 import { useContent } from '../store/useContent';
 import { useTheme, type ThemeSet } from '../store/useTheme';
 import Hero from '../components/sections/Hero';
@@ -17,6 +17,8 @@ import { buildFallbackSocialLinks } from '../lib/socialPlatforms';
 export default function Home() {
   const { hero, about, education, experience, projects, gallery, contact } = useContent();
   const { themeSet } = useTheme();
+  const prefersReducedMotion = useReducedMotion();
+  const [isMobile, setIsMobile] = useState(false);
   const { scrollYProgress } = useScroll();
   const progressScaleX = useSpring(scrollYProgress, {
     stiffness: 120,
@@ -26,6 +28,16 @@ export default function Home() {
   const blobYOne = useTransform(scrollYProgress, [0, 1], [0, -120]);
   const blobYTwo = useTransform(scrollYProgress, [0, 1], [0, 140]);
   const socialLinks = buildFallbackSocialLinks(contact);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const updateMobileState = () => setIsMobile(mediaQuery.matches);
+    updateMobileState();
+    mediaQuery.addEventListener('change', updateMobileState);
+    return () => mediaQuery.removeEventListener('change', updateMobileState);
+  }, []);
+
+  const shouldReduceEffects = prefersReducedMotion || isMobile;
 
   const sections = [
     { id: 'about', node: <About data={about} /> },
@@ -40,16 +52,16 @@ export default function Home() {
   return (
     <div className="space-y-0 overflow-x-hidden relative">
       <motion.div
-        style={{ scaleX: progressScaleX }}
+        style={{ scaleX: shouldReduceEffects ? 0 : progressScaleX }}
         className="fixed top-0 left-0 right-0 h-1 bg-primary origin-left z-[70] shadow-[0_0_18px_hsl(var(--primary)/0.5)]"
       />
-      <div className="absolute inset-0 pointer-events-none">
+      <div className={`absolute inset-0 pointer-events-none ${shouldReduceEffects ? 'hidden md:block' : ''}`}>
         <motion.div
-          style={{ y: blobYOne }}
+          style={{ y: shouldReduceEffects ? 0 : blobYOne }}
           className="absolute top-[30%] left-[-120px] w-[320px] h-[320px] bg-primary/10 rounded-full blur-3xl"
         />
         <motion.div
-          style={{ y: blobYTwo }}
+          style={{ y: shouldReduceEffects ? 0 : blobYTwo }}
           className="absolute bottom-[15%] right-[-120px] w-[360px] h-[360px] bg-accent/10 rounded-full blur-3xl"
         />
       </div>

@@ -400,7 +400,7 @@ export default function Admin() {
             {tab.label}
           </button>
         ))}
-        <button className="nav-btn" onClick={() => navigate('/')}>← Exit Site</button>
+        <button className="nav-btn" onClick={() => navigate('/')}>Exit Site</button>
         <button className="nav-btn" style={{ marginTop: 'auto', color: 'hsl(var(--destructive))' }} onClick={logout}>Logout</button>
       </div>
 
@@ -480,13 +480,13 @@ export default function Admin() {
             <input value={profileLinkedIn} onChange={(e) => setProfileLinkedIn(e.target.value)} placeholder="https://www.linkedin.com/in/..." />
             <label style={labelStyle}>LinkedIn Label</label>
             <input value={contactLinkedInLabel} onChange={(e) => setContactLinkedInLabel(e.target.value)} placeholder="Nayan Kuikel" />
-            <label style={labelStyle}>Skills (comma separated — shown in About & Skills chips)</label>
+            <label style={labelStyle}>Skills (comma-separated, shown in About and Skills chips)</label>
             <input value={profileSkills} onChange={(e) => setProfileSkills(e.target.value)} placeholder="Skill 1, Skill 2, Skill 3" />
             <hr style={{ borderColor: 'hsl(var(--border))', margin: '20px 0 12px' }} />
             <p style={{ fontSize: '11px', color: 'hsl(var(--muted-foreground))', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '4px' }}>Stat Cards</p>
             <label style={labelStyle}>First Job Year <span style={{ opacity: 0.5 }}>(auto-calculates Years Experience)</span></label>
             <input type="number" value={profileFirstJobYear} onChange={(e) => setProfileFirstJobYear(e.target.value)} placeholder="e.g. 2016" min="1980" max={new Date().getFullYear()} />
-            {previewYears !== null && <p style={{ fontSize: '11px', color: 'hsl(var(--primary))', marginTop: '4px' }}>→ Will show: <b>{previewYears}+ Years Experience</b></p>}
+            {previewYears !== null && <p style={{ fontSize: '11px', color: 'hsl(var(--primary))', marginTop: '4px' }}>Will show: <b>{previewYears}+ Years Experience</b></p>}
             <label style={labelStyle}>Projects Delivered</label>
             <input type="number" value={profileProjectCount} onChange={(e) => setProfileProjectCount(e.target.value)} placeholder="e.g. 40" min="0" />
             <label style={labelStyle}>Teams Led</label>
@@ -588,7 +588,7 @@ export default function Admin() {
               ))}
 
               <button className="save" onClick={saveSkillCategories} style={{ marginTop: '10px' }}>
-                💾 Save All Skills to Site
+                Save All Skills to Site
               </button>
             </div>
           </>

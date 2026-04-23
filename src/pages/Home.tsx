@@ -1,7 +1,7 @@
 import { motion, useScroll, useSpring, useTransform, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import { useContent } from '../store/useContent';
-import { useTheme } from '../store/useTheme';
+import { useTheme, type ThemeSet } from '../store/useTheme';
 import Hero from '../components/sections/Hero';
 import About from '../components/sections/About';
 import Education from '../components/sections/Education';
@@ -12,6 +12,7 @@ import Gallery from '../components/sections/Gallery';
 import Skills from '../components/sections/Skills';
 import FloatingSocialSidebar from '../components/social/FloatingSocialSidebar';
 import { getThemeRevealVariants } from '../lib/themePresentation';
+import { buildFallbackSocialLinks } from '../lib/socialPlatforms';
 
 export default function Home() {
   const { hero, about, education, experience, projects, gallery, contact } = useContent();
@@ -24,6 +25,7 @@ export default function Home() {
   });
   const blobYOne = useTransform(scrollYProgress, [0, 1], [0, -120]);
   const blobYTwo = useTransform(scrollYProgress, [0, 1], [0, 140]);
+  const socialLinks = buildFallbackSocialLinks(contact);
 
   const sections = [
     { id: 'about', node: <About data={about} /> },
@@ -51,7 +53,7 @@ export default function Home() {
           className="absolute bottom-[15%] right-[-120px] w-[360px] h-[360px] bg-accent/10 rounded-full blur-3xl"
         />
       </div>
-      <FloatingSocialSidebar links={contact?.socialLinks || []} />
+      <FloatingSocialSidebar links={socialLinks} />
       <Hero data={hero} />
       <div className="container mx-auto px-4 md:px-8 py-16 md:py-24 relative z-10 themed-sections">
         {sections.map((section, index) => (
@@ -72,7 +74,7 @@ function FadeInSection({
 }: {
   children: React.ReactNode;
   index: number;
-  themeSet: ReturnType<typeof useTheme>['themeSet'];
+  themeSet: ThemeSet;
 }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });

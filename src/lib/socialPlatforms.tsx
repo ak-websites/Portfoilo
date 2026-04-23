@@ -94,3 +94,54 @@ export function normalizeSocialHref(link: SocialLinkItem): string {
 
   return sanitizeUrl(raw);
 }
+
+export function buildFallbackSocialLinks(contact: {
+  email?: string;
+  phone?: string;
+  linkedin?: string;
+  linkedinLabel?: string;
+  socialLinks?: SocialLinkItem[];
+} | null | undefined): SocialLinkItem[] {
+  if (!contact) return [];
+
+  if (Array.isArray(contact.socialLinks) && contact.socialLinks.length > 0) {
+    return contact.socialLinks;
+  }
+
+  const fallbackLinks: SocialLinkItem[] = [];
+
+  if (contact.linkedin) {
+    fallbackLinks.push({
+      id: 'fallback-linkedin',
+      platform: 'linkedin',
+      icon: 'linkedin',
+      label: contact.linkedinLabel || 'LinkedIn',
+      url: contact.linkedin,
+      enabled: true,
+    });
+  }
+
+  if (contact.email) {
+    fallbackLinks.push({
+      id: 'fallback-email',
+      platform: 'email',
+      icon: 'mail',
+      label: 'Email',
+      url: contact.email,
+      enabled: true,
+    });
+  }
+
+  if (contact.phone) {
+    fallbackLinks.push({
+      id: 'fallback-phone',
+      platform: 'phone',
+      icon: 'phone',
+      label: 'Phone',
+      url: contact.phone,
+      enabled: true,
+    });
+  }
+
+  return fallbackLinks;
+}

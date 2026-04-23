@@ -35,21 +35,36 @@ export default function FloatingSocialSidebar({
   );
 
   useEffect(() => {
-    const section = document.getElementById(contactSectionId);
-    if (!section) return;
+    let observer: IntersectionObserver | null = null;
+    let frameId = 0;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsVisible(entry.isIntersecting);
-      },
-      {
-        threshold: 0.3,
-        rootMargin: '-10% 0px -10% 0px',
-      },
-    );
+    const attachObserver = () => {
+      const section = document.getElementById(contactSectionId);
 
-    observer.observe(section);
-    return () => observer.disconnect();
+      if (!section) {
+        frameId = window.requestAnimationFrame(attachObserver);
+        return;
+      }
+
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          setIsVisible(entry.isIntersecting);
+        },
+        {
+          threshold: 0.15,
+          rootMargin: '0px 0px -15% 0px',
+        },
+      );
+
+      observer.observe(section);
+    };
+
+    attachObserver();
+
+    return () => {
+      if (frameId) window.cancelAnimationFrame(frameId);
+      observer?.disconnect();
+    };
   }, [contactSectionId]);
 
   if (socialLinks.length === 0) return null;

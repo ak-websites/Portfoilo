@@ -262,7 +262,8 @@
 /* ─── SECTION LAYOUT ─────────────────────────────── */
 .section-shell {
   position: relative;
-  margin-top: 2rem;
+  margin-top: 1.5rem;
+  transition: transform 0.5s ease, margin 0.5s ease;
 }
 
 .section-divider {
@@ -278,4 +279,88 @@
     transparent 100%
   );
   opacity: 0.85;
+}
+
+.themed-sections {
+  --section-offset: 0px;
+}
+
+@media (min-width: 768px) {
+  [data-theme="architectural"] .themed-sections > .section-shell:nth-child(odd) {
+    transform: translateX(-1.5rem);
+  }
+
+  [data-theme="architectural"] .themed-sections > .section-shell:nth-child(even) {
+    transform: translateX(1.5rem);
+  }
+
+  [data-theme="concrete"] .themed-sections > .section-shell {
+    transform: translateY(0);
+  }
+
+  [data-theme="concrete"] .themed-sections > .section-shell + .section-shell {
+    margin-top: 2.25rem;
+  }
+
+  [data-theme="luxury"] .themed-sections > .section-shell:nth-child(odd) {
+    transform: translateX(2rem) translateY(-0.5rem);
+  }
+
+  [data-theme="luxury"] .themed-sections > .section-shell:nth-child(even) {
+    transform: translateX(-1rem) translateY(0.75rem);
+  }
+
+  [data-theme="luxury"] .themed-sections > .section-shell {
+    margin-top: 2.5rem;
+  }
+
+  [data-theme="nordic"] .themed-sections > .section-shell:nth-child(3n + 1) {
+    transform: translateX(1rem);
+  }
+
+  [data-theme="nordic"] .themed-sections > .section-shell:nth-child(3n + 2) {
+    transform: translateX(-1rem);
+  }
+
+  [data-theme="precision"] .themed-sections > .section-shell:nth-child(odd) {
+    transform: translateX(1.25rem);
+  }
+
+  [data-theme="precision"] .themed-sections > .section-shell:nth-child(even) {
+    transform: translateX(-1.25rem);
+  }
+
+  [data-theme="precision"] .themed-sections > .section-shell::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 -1.25rem;
+    width: 2px;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      color-mix(in oklab, var(--color-primary) 28%, transparent) 30%,
+      color-mix(in oklab, var(--color-primary) 28%, transparent) 70%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  [data-theme="blueprint"] .themed-sections > .section-shell:nth-child(odd) {
+    transform: translateX(-0.75rem) translateY(0.5rem);
+  }
+
+  [data-theme="blueprint"] .themed-sections > .section-shell:nth-child(even) {
+    transform: translateX(0.75rem) translateY(-0.5rem);
+  }
+}
+
+@media (max-width: 767px) {
+  .section-shell {
+    margin-top: 1rem;
+    transform: none !important;
+  }
+
+  [data-theme="precision"] .themed-sections > .section-shell::before {
+    display: none;
+  }
 }

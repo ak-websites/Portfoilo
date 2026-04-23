@@ -31,7 +31,7 @@ export default function Gallery({ data }: { data: any[] }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: index * 0.1 }}
-            className={`${item.span || 'col-span-1 row-span-1'} relative overflow-hidden rounded-[1.5rem] md:rounded-[2rem] group min-h-[220px]`}
+            className={`${getResponsiveSpanClass(item.span)} relative overflow-hidden rounded-[1.5rem] md:rounded-[2rem] group min-h-[220px]`}
           >
             <img 
               src={sanitizeImageUrl(item.url)} 
@@ -48,4 +48,17 @@ export default function Gallery({ data }: { data: any[] }) {
       </div>
     </section>
   );
+}
+
+function getResponsiveSpanClass(span?: string) {
+  switch (span) {
+    case 'col-span-2 row-span-2':
+      return 'sm:col-span-2 md:col-span-2 md:row-span-2';
+    case 'col-span-2 row-span-1':
+      return 'sm:col-span-2 md:col-span-2 md:row-span-1';
+    case 'col-span-1 row-span-2':
+      return 'md:col-span-1 md:row-span-2';
+    default:
+      return 'md:col-span-1 md:row-span-1';
+  }
 }

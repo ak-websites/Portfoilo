@@ -15,7 +15,8 @@ function ProjectCard({ project, index }: { project: any; index: number }) {
     <motion.div
       layout
       initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      viewport={{ once: true, amount: 0.2 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.5, delay: index * 0.08 }}
       className="group relative glass rounded-[2rem] md:rounded-[2.5rem] overflow-hidden border-2 border-transparent hover:border-primary/20 transition-all duration-500 flex flex-col"

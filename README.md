@@ -1,84 +1,155 @@
-🏗️ Dynamic Admin-Controlled Portfolio
+````md
+# 🏗️ Dynamic Admin-Controlled Portfolio
 
-A high-performance, full-stack CMS-driven portfolio built and maintained by Aashutosh Kuikel (@aKmsdfhjb) within the ak-websites organization.
+A high-performance, full-stack CMS-driven portfolio built and maintained by Aashutosh Kuikel (`@aKmsdfhjb`) within the **ak-websites** organization.
 
-This project was architected for Nayan Kuikel as a self-contained Content Management System, allowing the end-user to manage every aspect of their professional presence—from hero text to project galleries—directly through a secure dashboard without touching a single line of code.
+This project was architected for **Nayan Kuikel** as a fully self-contained Content Management System (CMS), allowing the end-user to manage every aspect of their professional presence — from hero text to project galleries — directly through a secure dashboard without touching a single line of code.
 
-🌐 Live Demo: nayan-rho.vercel.app
+---
 
-✨ Key Features
+## 🌐 Live Demo
 
-🔐 Live Admin Dashboard
+🔗 https://nayan-rho.vercel.app
 
-Total Control: Edit Hero sections, About Me, Projects, Skills, and Education in real-time.
+---
 
-Message Management: A built-in log to read and manage inbound messages/RSVPs from the contact form.
+# ✨ Key Features
 
-Role-Based Access: Secure admin panel with the ability to provision access to other collaborators.
+## 🔐 Live Admin Dashboard
 
-🎨 Advanced Theming System
+The core of this project is a robust administrative interface that gives non-technical users complete control over their digital identity.
 
-6 Signature Themes: Architectural, Concrete, Luxury, Nordic, Precision, and Blueprint.
+### ✅ Real-Time Content Editing
+Instantly update:
+- Hero Sections
+- About Me
+- Projects
+- Skills
+- Education
+- Experience
 
-18 Visual Variants: Each theme supports Light, Dark, and a custom "Earth/Brown" mode.
+### 🖼️ Asset Management
+Integrated Firebase Storage support for:
+- Project thumbnails
+- Gallery uploads
+- Image management
 
-Global Real-time Sync: Theme selections are stored in Firestore, updating the site's look for all visitors instantly.
+### 📩 Message Management
+A centralized communication hub to:
+- Read messages
+- Organize inquiries
+- Delete RSVPs and contact submissions
 
-🚀 Technical Excellence
+### 👥 Role-Based Access Control (RBAC)
+Secure authentication system allowing:
+- Admin provisioning
+- Collaborator access
+- Permission revocation
 
-Motion Design: Framer Motion-powered scroll reveals, parallax backgrounds, and fluid entrance transitions.
+---
 
-Modern Stack: Leveraging Vite 7 and React 19 for industry-leading performance.
+# 🎨 Advanced Theming & Design System
 
-Security First: URL sanitization helpers and protected route logic for the admin dashboard.
+Designed to be visually versatile with a sophisticated theme engine that goes far beyond simple color switching.
 
-🛠️ Tech Stack
+## 🎭 6 Unique Architectural Themes
+Choose from:
+- Architectural
+- Concrete
+- Luxury
+- Nordic
+- Precision
+- Blueprint
 
-Layer
+Each theme includes:
+- Custom typography
+- Distinct border radii
+- Unique background patterns
+- Motion-specific animations
 
-Technology
+## 🌗 18 Visual Modes
+Every theme supports:
+- Light Mode
+- Dark Mode
+- Earth/Brown Mode
 
-Frontend
+Resulting in a total of:
 
-React 19, TypeScript, Vite 7
+> **18 unique visual combinations**
 
-Styling
+## 🔄 Global Synchronization
+Theme and mode selections are synchronized using Firestore, allowing the entire site appearance to update for all visitors in real-time.
 
-TailwindCSS 4, Custom CSS Variables
+---
 
-Backend
+# 🚀 Technical Excellence
 
-Firebase (Firestore, Auth, Storage)
+Built with modern web standards, smooth motion design, and optimized performance.
 
-State Management
+## ✨ Fluid Motion Design
+Powered by **Framer Motion** featuring:
+- Scroll-triggered reveals
+- Parallax animated blobs
+- Theme-specific entrance animations
 
-Zustand
+## ⚡ Cutting-Edge Stack
+Optimized using:
+- React 19
+- Vite 7
+- TypeScript
 
-Form Logic
+Delivering:
+- Lightning-fast load times
+- Excellent developer experience
+- Smooth UI interactions
 
-React Hook Form + Zod
+## 🔒 Security & Reliability
+Includes:
+- URL sanitization helpers
+- Protected admin routes
+- Zod-based schema validation
+- Secure Firebase authentication flow
 
-Routing
+---
 
-React Router DOM v7
+# 🛠️ Tech Stack
 
-Icons
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, TypeScript, Vite 7 |
+| Styling | TailwindCSS 4, Custom CSS Variables |
+| Backend | Firebase (Firestore, Auth, Storage) |
+| State Management | Zustand |
+| Forms & Validation | React Hook Form + Zod |
+| Routing | React Router DOM v7 |
+| Animations | Framer Motion |
+| Icons | Lucide React |
 
-Lucide React
+---
 
-🚀 Getting Started
+# 🚀 Getting Started
 
-1. Installation
+## 1️⃣ Installation
 
+Clone the repository and install dependencies.
+
+```bash
 git clone https://github.com/ak-websites/Portfoilo.git
+
 cd Portfoilo
+
 npm install
+````
 
+---
 
-2. Firebase Configuration
+## 2️⃣ Firebase Configuration
 
-Update src/lib/firebase.ts with your credentials:
+Create a Firebase project and configure:
 
+`src/lib/firebase.ts`
+
+```ts
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -87,47 +158,103 @@ const firebaseConfig = {
   messagingSenderId: "YOUR_SENDER_ID",
   appId: "YOUR_APP_ID"
 };
+```
 
+---
 
-3. Local Development
+## 3️⃣ Firestore Rules & Setup
 
+### 🔐 Authentication
+
+Enable:
+
+* Email/Password Authentication
+
+Inside Firebase Console.
+
+### 🗄️ Firestore
+
+Initialize collections:
+
+* content
+* projects
+* experience
+* education
+* messages
+* users
+
+### 👑 Initial Admin Setup
+
+After registering through `/login`, manually set:
+
+```json
+role: "admin"
+```
+
+Inside the corresponding Firestore user document.
+
+This unlocks the admin dashboard.
+
+---
+
+## 4️⃣ Local Development
+
+Run the development server with HMR:
+
+```bash
 npm run dev
+```
 
+---
 
-📁 Project Structure
+# 📁 Project Structure
 
+```bash
 src/
 ├── components/
-│   ├── admin/          # Dashboard panels (SocialLinks, UserManagement)
-│   ├── sections/       # Modular UI sections (Hero, Projects, Skills)
-│   └── social/         # Floating Social Sidebar logic
+│   ├── admin/                 # Dashboard panels and CMS editors
+│   ├── sections/              # Public UI sections
+│   └── social/                # Floating social sidebar animations
+│
 ├── lib/
-│   ├── firebase.ts     # Firebase initialization
-│   ├── socialPlatforms.tsx  # Social link configs and icon mapping
-│   └── themePresentation.ts # Per-theme animation variants
+│   ├── firebase.ts            # Firebase initialization
+│   ├── socialPlatforms.tsx    # Dynamic social platform mapping
+│   └── themePresentation.ts   # Theme motion + style logic
+│
 ├── pages/
-│   ├── Home.tsx        # Public portfolio view
-│   ├── Admin.tsx       # Secured management dashboard
-│   └── Login.tsx       # Authentication gateway
+│   ├── Home.tsx               # Public portfolio
+│   ├── Admin.tsx              # Protected dashboard
+│   └── Login.tsx              # Admin authentication
+│
 ├── store/
-│   ├── useAuth.ts      # Authentication state
-│   ├── useContent.ts   # Firestore synchronization logic
-│   └── useTheme.ts     # Theme and Mode configuration
+│   ├── useAuth.ts             # Auth + RBAC state
+│   ├── useContent.ts          # Firestore sync logic
+│   └── useTheme.ts            # Theme + visual mode state
+│
 └── utils/
-    ├── cn.ts           # Tailwind class merging utility
-    └── security.ts     # URL sanitization and protection helpers
+    ├── cn.ts                  # Tailwind class merging helper
+    └── security.ts            # Sanitization + protection helpers
+```
 
+---
 
-👤 Developer & Maintainer
+# 👤 Developer & Maintainer
 
-Aashutosh Kuikel
+## Aashutosh Kuikel
 
-GitHub: @aKmsdfhjb
+Architect and lead maintainer of this portfolio system.
 
-Organization: ak-websites
+* GitHub: `@aKmsdfhjb`
+* Organization: `ak-websites`
+* Project Subject: `Nayan Kuikel`
 
-Project Subject: Nayan Kuikel
+---
 
-📄 License
+# 📄 License
 
-Distributed under the MIT License. See LICENSE for more information.
+Distributed under the MIT License.
+
+See the `LICENSE` file for more information.
+
+```
+```

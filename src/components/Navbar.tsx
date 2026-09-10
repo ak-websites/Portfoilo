@@ -46,6 +46,7 @@ export default function Navbar() {
           <a href="#experience" className="hover:text-primary transition-colors duration-200">Experience</a>
           <a href="#projects" className="hover:text-primary transition-colors duration-200">Projects</a>
           <a href="#contact" className="hover:text-primary transition-colors duration-200">Contact</a>
+          <a href="#tools" className="text-gray-300 hover:text-blue-400 transition-colors px-3 py-2 text-sm font-medium">Tools</a>
         </div>
       </div>
 

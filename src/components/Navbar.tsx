@@ -1,26 +1,25 @@
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../store/useAuth';
-import { LogOut, LayoutDashboard, User, Menu, X, Sun, Moon, Coffee } from 'lucide-react';
+import { LogOut, LayoutDashboard, User, Menu, X, Sun, Moon, Coffee, Wrench } from 'lucide-react';
 import { auth, db } from '../lib/firebase';
-import { useState } from 'react';
-import { useTheme } from '../store/useTheme';
+import { useTheme, ThemeMode } from '../store/useTheme';
 import { doc, setDoc } from 'firebase/firestore';
 
-export default function Navbar() {
+export default function Navbar(): React.JSX.Element {
   const { user, isAdmin } = useAuth();
   const { mode, setMode } = useTheme();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
-  const toggleMode = async () => {
-    const nextMode = mode === 'light' ? 'dark' : mode === 'dark' ? 'brown' : 'light';
+  const toggleMode = async (): Promise<void> => {
+    const nextMode: ThemeMode = mode === 'light' ? 'dark' : mode === 'dark' ? 'brown' : 'light';
     setMode(nextMode);
     if (isAdmin) {
       try {
         await setDoc(doc(db, 'settings', 'global'), { mode: nextMode }, { merge: true });
       } catch (error) {
-        console.error("Failed to update global theme:", error);
+        console.error('Failed to update global theme:', error);
       }
     }
   };
@@ -28,7 +27,7 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass h-18 md:h-20 flex items-center px-4 md:px-12 justify-between">
       <div className="flex items-center gap-4 md:gap-8 min-w-0">
-        {/* Logo - no more AUTHORIZED_ACCESS */}
+        {/* Logo */}
         <Link to="/" className="flex items-center gap-3 group">
           <motion.div
             whileHover={{ scale: 1.08, rotate: [0, -8, 8, 0] }}
@@ -42,11 +41,14 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden lg:flex items-center gap-8 text-sm font-bold uppercase tracking-widest text-muted-foreground">
-          <a href="#about" className="hover:text-primary transition-colors duration-200">About</a>
-          <a href="#experience" className="hover:text-primary transition-colors duration-200">Experience</a>
-          <a href="#projects" className="hover:text-primary transition-colors duration-200">Projects</a>
-          <a href="#contact" className="hover:text-primary transition-colors duration-200">Contact</a>
-          <a href="#tools" className="text-gray-300 hover:text-blue-400 transition-colors px-3 py-2 text-sm font-medium">Tools</a>
+          <a href="/#about" className="hover:text-primary transition-colors duration-200">About</a>
+          <a href="/#experience" className="hover:text-primary transition-colors duration-200">Experience</a>
+          <a href="/#projects" className="hover:text-primary transition-colors duration-200">Projects</a>
+          <a href="/#contact" className="hover:text-primary transition-colors duration-200">Contact</a>
+          <Link to="/tools" className="flex items-center gap-1.5 hover:text-primary transition-colors duration-200">
+            <Wrench size={14} />
+            Tools
+          </Link>
         </div>
       </div>
 
@@ -68,7 +70,7 @@ export default function Navbar() {
               Dashboard
             </Link>
           )}
-          
+
           {user ? (
             <div className="flex items-center gap-3 pl-3 border-l border-border">
               <div className="flex flex-col items-end">
@@ -107,16 +109,24 @@ export default function Navbar() {
             exit={{ opacity: 0, y: -10 }}
             className="absolute top-20 md:top-24 left-4 right-4 md:left-6 md:right-6 glass rounded-[2rem] p-6 md:p-8 flex flex-col gap-4 lg:hidden shadow-2xl max-h-[calc(100vh-6rem)] overflow-y-auto"
           >
-            {['about', 'experience', 'projects', 'contact'].map((section) => (
+            {(['about', 'experience', 'projects', 'contact'] as const).map((section) => (
               <a 
                 key={section}
-                href={`#${section}`} 
+                href={`/#${section}`} 
                 onClick={() => setIsMobileMenuOpen(false)} 
                 className="text-lg md:text-xl font-black uppercase tracking-[0.18em] capitalize hover:text-primary transition-colors"
               >
                 {section}
               </a>
             ))}
+            <Link 
+              to="/tools" 
+              onClick={() => setIsMobileMenuOpen(false)} 
+              className="text-lg md:text-xl font-black uppercase tracking-[0.18em] hover:text-primary transition-colors flex items-center gap-2"
+            >
+              <Wrench size={18} />
+              Tools
+            </Link>
             <hr className="border-border" />
             {!user && (
               <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-black text-primary">Login</Link>

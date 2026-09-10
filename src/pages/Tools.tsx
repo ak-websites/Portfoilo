@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Compass, Calculator, Layers, ArrowRightLeft } from 'lucide-react';
+import { Compass, Calculator, Layers, ArrowRightLeft, LucideIcon } from 'lucide-react';
 
 // Conversion constants (1 Sq. Meter = Base unit)
 const SQ_METERS = {
@@ -13,27 +13,36 @@ const SQ_METERS = {
   aana: 1 / 31.80,
   paisa: 1 / 7.95,
   dam: 1 / 1.99,
-};
+} as const;
 
-export default function Tools() {
-  const [activeTab, setActiveTab] = useState('land');
+type ToolTab = 'land' | 'triangulation' | 'concrete';
+type ConcreteGrade = 'M20' | 'M15';
+
+interface TabItem {
+  id: ToolTab;
+  label: string;
+  icon: LucideIcon;
+}
+
+export default function Tools(): React.JSX.Element {
+  const [activeTab, setActiveTab] = useState<ToolTab>('land');
 
   // State: Land Unit Converter
-  const [sqm, setSqm] = useState(100);
+  const [sqm, setSqm] = useState<number | string>(100);
 
   // State: Triangulation (Heron's Formula)
-  const [sideA, setSideA] = useState(10);
-  const [sideB, setSideB] = useState(10);
-  const [sideC, setSideC] = useState(10);
+  const [sideA, setSideA] = useState<number | string>(10);
+  const [sideB, setSideB] = useState<number | string>(10);
+  const [sideC, setSideC] = useState<number | string>(10);
 
   // State: Concrete Quantity Estimator
-  const [length, setLength] = useState(5);
-  const [width, setWidth] = useState(4);
-  const [thickness, setThickness] = useState(0.15);
-  const [grade, setGrade] = useState('M20');
+  const [length, setLength] = useState<number | string>(5);
+  const [width, setWidth] = useState<number | string>(4);
+  const [thickness, setThickness] = useState<number | string>(0.15);
+  const [grade, setGrade] = useState<ConcreteGrade>('M20');
 
   // --- LAND CALCULATIONS ---
-  const currentSqm = parseFloat(sqm) || 0;
+  const currentSqm = typeof sqm === 'number' ? sqm : parseFloat(sqm) || 0;
   const sqft = (currentSqm * SQ_METERS.sqFeet).toFixed(2);
 
   // Terai System Breakdown (Bigha - Kattha - Dhur)
@@ -53,9 +62,9 @@ export default function Tools() {
   const dam = (remPaisa / 1.99).toFixed(2);
 
   // --- TRIANGULATION CALCULATIONS ---
-  const a = parseFloat(sideA) || 0;
-  const b = parseFloat(sideB) || 0;
-  const c = parseFloat(sideC) || 0;
+  const a = typeof sideA === 'number' ? sideA : parseFloat(sideA) || 0;
+  const b = typeof sideB === 'number' ? sideB : parseFloat(sideB) || 0;
+  const c = typeof sideC === 'number' ? sideC : parseFloat(sideC) || 0;
   let triangleArea = 0;
   let isValidTriangle = false;
 
@@ -66,11 +75,15 @@ export default function Tools() {
   }
 
   // --- CONCRETE CALCULATIONS ---
-  const wetVolume = (parseFloat(length) || 0) * (parseFloat(width) || 0) * (parseFloat(thickness) || 0);
+  const lVal = typeof length === 'number' ? length : parseFloat(length) || 0;
+  const wVal = typeof width === 'number' ? width : parseFloat(width) || 0;
+  const tVal = typeof thickness === 'number' ? thickness : parseFloat(thickness) || 0;
+
+  const wetVolume = lVal * wVal * tVal;
   const dryVolume = wetVolume * 1.54;
-  let cementBags = 0;
-  let sandCuFt = 0;
-  let aggregateCuFt = 0;
+  let cementBags = '0.0';
+  let sandCuFt = '0.00';
+  let aggregateCuFt = '0.00';
 
   if (grade === 'M20') {
     const cementVol = (1 / 5.5) * dryVolume;
@@ -83,6 +96,12 @@ export default function Tools() {
     sandCuFt = ((2 / 7) * dryVolume * 35.3147).toFixed(2);
     aggregateCuFt = ((4 / 7) * dryVolume * 35.3147).toFixed(2);
   }
+
+  const tabs: TabItem[] = [
+    { id: 'land', label: 'Land Converter', icon: ArrowRightLeft },
+    { id: 'triangulation', label: 'Triangulation Tool', icon: Compass },
+    { id: 'concrete', label: 'Concrete Estimator', icon: Layers },
+  ];
 
   return (
     <div className="pt-28 pb-16 px-4 md:px-12 max-w-6xl mx-auto min-h-screen">
@@ -98,11 +117,7 @@ export default function Tools() {
 
       {/* Tabs Navigation */}
       <div className="flex flex-wrap justify-center gap-3 mb-10 border-b border-border pb-4">
-        {[
-          { id: 'land', label: 'Land Converter', icon: ArrowRightLeft },
-          { id: 'triangulation', label: 'Triangulation Tool', icon: Compass },
-          { id: 'concrete', label: 'Concrete Estimator', icon: Layers },
-        ].map((tab) => {
+        {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
@@ -136,7 +151,7 @@ export default function Tools() {
               <input
                 type="number"
                 value={sqm}
-                onChange={(e) => setSqm(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSqm(e.target.value)}
                 className="w-full bg-accent/50 border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-bold"
                 placeholder="Enter area in m²"
               />
@@ -199,7 +214,7 @@ export default function Tools() {
                 <input
                   type="number"
                   value={item.val}
-                  onChange={(e) => item.set(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => item.set(e.target.value)}
                   className="w-full bg-accent/50 border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-bold"
                 />
               </div>
@@ -240,7 +255,7 @@ export default function Tools() {
               <input
                 type="number"
                 value={length}
-                onChange={(e) => setLength(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLength(e.target.value)}
                 className="w-full bg-accent/50 border border-border rounded-xl px-4 py-2.5 text-foreground font-bold"
               />
             </div>
@@ -251,7 +266,7 @@ export default function Tools() {
               <input
                 type="number"
                 value={width}
-                onChange={(e) => setWidth(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWidth(e.target.value)}
                 className="w-full bg-accent/50 border border-border rounded-xl px-4 py-2.5 text-foreground font-bold"
               />
             </div>
@@ -263,7 +278,7 @@ export default function Tools() {
                 type="number"
                 step="0.01"
                 value={thickness}
-                onChange={(e) => setThickness(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setThickness(e.target.value)}
                 className="w-full bg-accent/50 border border-border rounded-xl px-4 py-2.5 text-foreground font-bold"
               />
             </div>
@@ -273,7 +288,7 @@ export default function Tools() {
               </label>
               <select
                 value={grade}
-                onChange={(e) => setGrade(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setGrade(e.target.value as ConcreteGrade)}
                 className="w-full bg-accent/50 border border-border rounded-xl px-4 py-2.5 text-foreground font-bold"
               >
                 <option value="M20">M20 (1 : 1.5 : 3) - Beams / Slabs</option>

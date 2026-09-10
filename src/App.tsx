@@ -1,18 +1,19 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useAuth } from './store/useAuth';
 import { useTheme } from './store/useTheme';
 import { useContent } from './store/useContent';
 
-// Pages
+// Pages & Components
 import Home from './pages/Home';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
+import Tools from './pages/Tools';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 
-function App() {
+export default function App(): React.JSX.Element {
   const initAuth = useAuth((state) => state.initialize);
   const syncTheme = useTheme((state) => state.syncWithFirestore);
   const syncContent = useContent((state) => state.syncContent);
@@ -35,6 +36,7 @@ function App() {
         <Routes>
           {/* Main Portfolio Layout */}
           <Route path="/" element={<><Navbar /><main className="flex-grow"><Home /></main><Footer /></>} />
+          <Route path="/tools" element={<><Navbar /><main className="flex-grow"><Tools /></main><Footer /></>} />
           <Route path="/login" element={<main className="flex-grow"><Login /></main>} />
           
           {/* Separate Admin Dashboard Layout (No Site Navbar/Footer) */}
@@ -51,5 +53,3 @@ function App() {
     </Router>
   );
 }
-
-export default App;
